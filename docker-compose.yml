@@ -1,0 +1,35 @@
+services:
+  api:
+    build:
+      context: .
+      target: development
+    container_name: campusfix-api
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    volumes:
+      - ./src:/app/src
+      - ./package.json:/app/package.json
+    depends_on:
+      - redis
+    networks:
+      - campusfix-net
+    command: npm run dev
+
+  redis:
+    image: redis:7-alpine
+    container_name: campusfix-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - campusfix-net
+
+networks:
+  campusfix-net:
+    driver: bridge
+
+volumes:
+  redis-data:
