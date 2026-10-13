@@ -6,10 +6,12 @@ services:
     container_name: campusfix-api
     ports:
       - "8000:8000"
+      - "4983:4983" 
     env_file:
       - .env
     volumes:
       - ./src:/app/src
+      - ./drizzle:/app/drizzle
       - ./package.json:/app/package.json
     depends_on:
       mysql:
