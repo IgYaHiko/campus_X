@@ -53,6 +53,13 @@ app.get("/health", async (_req: Request, res: Response) => {
   });
 });
 
+app.get("/hi", (_req, res) => {
+  res.status(200).json({
+    success: true,
+    message: "CampusX Api is running fucker DW",
+  });
+});
+
 // 404 handler — after all routes
 app.use(notFound);
 
