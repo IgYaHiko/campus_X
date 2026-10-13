@@ -15,8 +15,18 @@ const envSchema = z.object({
     .refine((val) => !Number.isNaN(val), {
       message: "PORT must be a valid number",
     }),
+  // redis validation setup
   REDIS_HOST: z.string().default("localhost"),
   REDIS_PORT: z.string().default("6379").transform((v) => parseInt(v,10)),
+  // setup db validations
+  DB_HOST: z.string().default("localhost"),
+  DB_PORT: z.string().default("3306").transform((v) => parseInt(v,10)),
+  DB_USER: z.string().default("root"),
+  DB_PASSWORD: z.string().default(""),
+  DB_NAME: z.string().default("campusfix"),
+
+  
+  
 
 });
 
@@ -35,6 +45,12 @@ export const env = {
   PORT: parsed.data.PORT,
   REDIS_HOST: parsed.data.REDIS_HOST,
   REDIS_PORT: parsed.data.REDIS_PORT,
+  DB_HOST: parsed.data.DB_HOST,
+  DB_PORT: parsed.data.DB_PORT,
+  DB_USER: parsed.data.DB_USER,
+  DB_PASSWORD: parsed.data.DB_PASSWORD,
+  DB_NAME: parsed.data.DB_NAME,
   isDev: parsed.data.NODE_ENV === "development",
   isProd: parsed.data.NODE_ENV === "production",
+  
 };

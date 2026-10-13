@@ -12,7 +12,10 @@ services:
       - ./src:/app/src
       - ./package.json:/app/package.json
     depends_on:
-      - redis
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_started
     networks:
       - campusfix-net
     command: npm run dev
@@ -27,9 +30,31 @@ services:
     networks:
       - campusfix-net
 
+  mysql:
+    image: mysql:8.0
+    container_name: campusfix-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpass
+      MYSQL_DATABASE: campusfix
+      MYSQL_USER: campusfix
+      MYSQL_PASSWORD: campusfix
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    networks:
+      - campusfix-net
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-prootpass"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
 networks:
   campusfix-net:
     driver: bridge
 
 volumes:
   redis-data:
+  mysql-data:
