@@ -10,7 +10,7 @@ WORKDIR /app
 ENV NODE_ENV=development
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-EXPOSE 5000
+EXPOSE 8000
 CMD ["npm", "run", "dev"]
 
 # ---------- Stage 3: builder (compile TS) ----------
@@ -33,5 +33,5 @@ ENV NODE_ENV=production
 COPY --from=prod-deps /app/node_modules ./node_modules
 COPY --from=builder /app/dist ./dist
 COPY package*.json ./
-EXPOSE 5000
+EXPOSE 8000
 CMD ["node", "dist/index.js"]
