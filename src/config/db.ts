@@ -15,6 +15,7 @@ export const pool = mysql.createPool({
     dateStrings: false,
     enableKeepAlive: true,
 });
+
 export async function pingDB(): Promise<boolean> {
   try {
     const conn = await pool.getConnection();
