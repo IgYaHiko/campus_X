@@ -1,4 +1,5 @@
 import express, { Application, Request, Response } from "express";
+import apiRoutes from "./routes"
 import cors from "cors";
 import pinoHttp from "pino-http";
 import { logger } from "./config/logger";
@@ -39,6 +40,7 @@ app.get("/health", async (_req: Request, res: Response) => {
     redisStatus = "down";
   }
 
+
   const dbUp = await pingDB();
 
   res.status(200).json({
@@ -59,6 +61,8 @@ app.get("/hi", (_req, res) => {
     message: "CampusX Api is running fucker DW",
   });
 });
+
+app.use("/api/v1", apiRoutes)
 
 // 404 handler — after all routes
 app.use(notFound);
