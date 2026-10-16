@@ -12,6 +12,10 @@ export const listComplaintsQuerySchema = paginationSchema.extend({
     search: z.string().trim().min(1).max(100).optional(),
 });
 
+
+export const complaintIdParamSchema = z.object({
+    id: z.coerce.number().int().positive(),
+})
+
 export type ListComplaintsQuery = z.infer<typeof listComplaintsQuerySchema>;
-
-
+export type ComplaintIdParam = z.infer<typeof complaintIdParamSchema>

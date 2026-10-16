@@ -8,9 +8,45 @@ import { categories } from "../../db/schema/categories";
 import { departments } from "../../db/schema/department";
 import { staff } from "../../db/schema/staff";
 import { getOffset } from "../../utils/pagination";
-import { ComplaintListItem } from "../../dto/complaints/complaints.dto";
+import { ComplaintComment, ComplaintDetail, ComplaintListItem, ComplaintStatusChange, ComplaintTag } from "../../dto/complaints/complaints.dto";
+import { complaintComments } from "../../db/schema/complaintComments";
+import { complaintStatusHistory } from "../../db/schema/complaintStatusHistory";
+import { tags } from "../../db/schema/tags";
+import { complaintTags } from "../../db/schema/complaintTags";
+import { cache } from "../../utils/cache";
+
+
+/* It creates a unique cache key based on the filters and pagination.
+It asks cache.wrap() to return cached data if available.
+If the cache doesn't contain the result, it executes _listComplaintsFromDB(query).
+The 60 indicates a cache TTL of 60 seconds, assuming your cache.wrap() uses the third argument as the TTL. */
 
 export async function listComplaints(query: ListComplaintsQuery) {
+    const key = `complaints:list:${JSON.stringify({
+    page: query.page,
+    limit: query.limit,
+    status: query.status ?? null,
+    priority: query.priority ?? null,
+    categoryId: query.categoryId ?? null,
+    studentId: query.studentId ?? null,
+    departmentId: query.departmentId ?? null,
+    search: query.search ?? null,
+  })}`;
+
+  return cache.wrap(key, () => _listComplaintsFromDB(query), 60);
+
+}
+
+// fetches row 
+// purpose:
+/* A. Builds filters
+B. Fetches complaint data
+C. Implements pagination
+D. Counts matching complaints
+E. Shapes the result using the DTO */
+
+
+export async function _listComplaintsFromDB(query: ListComplaintsQuery) {
   // ---------- Build WHERE conditions ----------
   const conditions: SQL[] = [];
 
@@ -126,5 +162,182 @@ export async function listComplaints(query: ListComplaintsQuery) {
       total,
       totalPages: Math.ceil(total / query.limit),
     },
+  };
+}
+
+
+// return single complaints with comments, history and tags
+
+/* 1. Main complaint
+Fetches the title, description, location, priority, status, student, category, department, assigned staff, and resolution details.
+
+2. Comments
+Fetches comments associated with the complaint and identifies their authors.
+
+3. Status history
+Fetches previous and new statuses, who changed the status, any note, and the timestamp.
+4. Tags
+
+Fetches tags linked to the complaint through the complaintTags junction table. */
+export async function getComplaintById(id: number): Promise<ComplaintDetail | null> {
+
+    // main component 
+      const [row] = await db.select({
+
+        // from complaints schema
+        id: complaints.id,
+        title: complaints.title,
+        description:  complaints.description,
+        location: complaints.location,
+        building: complaints.building,
+        priority: complaints.priority,
+        status: complaints.status,
+        createdAt: complaints.createdAt,
+        resolvedAt: complaints.resolvedAt,
+        resolutionNote: complaints.resolutionNote,
+
+        // student schema
+        studentId: students.id,
+        studentEmail: students.email,
+        studentName: students.name,
+        studentRoll: students.rollNumber,
+
+        // from category schema
+
+        categoryId: categories.id,
+        categoryName: categories.name,
+
+        // from department schema
+        departmentId: departments.id,
+        departmentName: departments.name,
+
+        //from staff schema
+        assignedStaffId: staff.id,
+        assignedStaffName: staff.name,
+      })
+      .from(complaints)
+      .innerJoin(students, eq(students.id, complaints.studentId))
+      .innerJoin(categories, eq(categories.id, complaints.categoryId))
+      .leftJoin(departments, eq(departments.id, complaints.departmentId))
+      .leftJoin(staff, eq(staff.id, complaints.assignedStaffId))
+      .where(eq(complaints.id, id))
+      .limit(1);
+
+      if(!row) return null;
+
+     // 2) Comments
+     // from complaintComments schema
+      const commentRows = await db.select({
+        // from complaintComments schema
+        id: complaintComments.id,
+        body: complaintComments.body,
+        commenterType: complaintComments.commenterType,
+        studentId: complaintComments.studentId,
+        staffId: complaintComments.staffId,
+        // from student schema
+        studentName: students.name,
+
+        // from staff schema
+        staffName: staff.name,
+        createdAt: complaintComments.createdAt,
+    })
+    .from(complaintComments)
+    .leftJoin(students, eq(students.id, complaintComments.studentId))
+    .leftJoin(staff, eq(staff.id, complaintComments.staffId))
+    .where(eq(complaintComments.complaintId, id))
+    .orderBy(complaintComments.createdAt);
+
+    // 3) Status history
+    // from complaintStatusHistory schema
+  const historyRows = await db
+    .select({
+      id: complaintStatusHistory.id,
+      oldStatus: complaintStatusHistory.oldStatus,
+      newStatus: complaintStatusHistory.newStatus,
+      changedByStaffId: complaintStatusHistory.changedByStaffId,
+      changedByName: staff.name,
+      note: complaintStatusHistory.note,
+      changedAt: complaintStatusHistory.changedAt,
+    })
+    .from(complaintStatusHistory)
+    .leftJoin(staff, eq(staff.id, complaintStatusHistory.changedByStaffId))
+    .where(eq(complaintStatusHistory.complaintId, id))
+    .orderBy(complaintStatusHistory.changedAt);
+
+
+    // tags from complaintTags schema 
+    const tagsRow = await db.select({
+        id: tags.id,
+        name: tags.name,
+        color: tags.color,
+    })
+    .from(complaintTags)
+    .innerJoin(tags, eq(tags.id, complaintTags.tagId))
+    .where(eq(complaintTags.complaintId, id));
+
+    // shape 
+
+    const comments: ComplaintComment[] = commentRows.map((c) => ({
+    id: c.id,
+    body: c.body,
+    commenterType: c.commenterType,
+    authorName:
+      c.commenterType === "student"
+        ? (c.studentName ?? "Unknown student")
+        : (c.staffName ?? "Unknown staff"),
+    authorId:
+      c.commenterType === "student" ? (c.studentId ?? 0) : (c.staffId ?? 0),
+    createdAt: c.createdAt.toISOString(),
+  }));
+
+
+  const statusHistory: ComplaintStatusChange[] = historyRows.map((h) => ({
+    id: h.id,
+    oldStatus: h.oldStatus,
+    newStatus: h.newStatus,
+    changedByName: h.changedByName,
+    changedById: h.changedByStaffId,
+    note: h.note,
+    changedAt: h.changedAt.toISOString(),
+  }));
+
+   const tagList: ComplaintTag[] = tagsRow.map((t) => ({
+    id: t.id,
+    name: t.name,
+    color: t.color,
+  }));
+
+
+return {
+    id: row.id,
+    title: row.title,
+    description: row.description,
+    location: row.location,
+    building: row.building,
+    priority: row.priority,
+    status: row.status,
+    createdAt: row.createdAt,
+    resolutionNote: row.resolutionNote,
+
+    student: {
+      id: row.studentId,
+      email: row.studentEmail,
+      name: row.studentName,
+      rollNumber: row.studentRoll,
+    },
+
+    category: { id: row.categoryId, name: row.categoryName },
+
+    department: row.departmentId
+      ? { id: row.departmentId, name: row.departmentName! }
+      : null,
+
+    assignedStaff: row.assignedStaffId
+      ? { id: row.assignedStaffId, name: row.assignedStaffName! }
+      : null,
+
+    comments,
+    statusHistory,
+    tags: tagList,
   };
 }
