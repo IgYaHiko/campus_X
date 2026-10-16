@@ -7,6 +7,7 @@ export interface ComplaintListItem {
     priority: string;
     status: string;
     createdAt: Date;
+    
 
 
     student: {
@@ -33,3 +34,41 @@ export interface ComplaintListItem {
     }  | null;
 
 }
+
+
+export interface ComplaintComment {
+    id: number;
+    body: string;
+    commenterType: "student" | "staff";
+    authorName: string;
+    authorId: number;
+    createdAt: string;
+}
+
+
+export interface ComplaintStatusChange {
+    id: number;
+    oldStatus: string | null;
+    newStatus: string;
+    changedByName: string | null;
+    changedById: number | null;
+    note: string | null;
+    changedAt: string;
+}
+
+
+export interface ComplaintTag {
+  id: number;
+  name: string;
+  color: string;
+}
+
+
+export interface ComplaintDetail extends ComplaintListItem {
+  resolutionNote: string | null;
+  comments: ComplaintComment[];
+  statusHistory: ComplaintStatusChange[];
+  tags: ComplaintTag[];
+}
+
+
