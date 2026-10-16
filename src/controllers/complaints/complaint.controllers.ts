@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { complaintIdParamSchema, listComplaintsQuerySchema } from "../../validators/complaints/complaint.validator";
+import { complaintIdParamSchema, createComplaintSchema, listComplaintsQuerySchema } from "../../validators/complaints/complaint.validator";
 import * as complaintService from "../../services/complaints/complaint.service";
 import { ApiError } from "../../utils/ApiError";
 
@@ -39,4 +39,20 @@ export async function getComplaint(req: Request, res: Response, next: NextFuncti
     } catch (error) {
       next(error)
     }
+}
+
+
+export async function createComplaint(req: Request, res: Response, next: NextFunction) {
+        try {
+          const body = createComplaintSchema.parse(req.body);
+          const complaint = await complaintService.createComplaints(body);
+
+          res
+          .status(201)
+          .location(`/api/v1/complaints${complaint!.id}`)
+          .json({ success: true, data: complaint });
+          
+        } catch (error) {
+          next(error)
+        }
 }
