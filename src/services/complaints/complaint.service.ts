@@ -1,9 +1,9 @@
 
 import { and, desc, eq, like, or, SQL, count } from "drizzle-orm";
-import { ListComplaintsQuery } from "../../validators/complaints/complaint.validator";
+import { CreateComplaintInput, ListComplaintsQuery } from "../../validators/complaints/complaint.validator";
 import { complaints } from "../../db/schema/complaints";
 import { db } from "../../db/client";
-import { students } from "../../db/schema/students";
+import { students as studentsTable} from "../../db/schema/students";
 import { categories } from "../../db/schema/categories";
 import { departments } from "../../db/schema/department";
 import { staff } from "../../db/schema/staff";
@@ -14,6 +14,8 @@ import { complaintStatusHistory } from "../../db/schema/complaintStatusHistory";
 import { tags } from "../../db/schema/tags";
 import { complaintTags } from "../../db/schema/complaintTags";
 import { cache } from "../../utils/cache";
+import { ApiError } from "../../utils/ApiError";
+import { logger } from "../../config/logger";
 
 
 /* It creates a unique cache key based on the filters and pagination.
@@ -92,10 +94,10 @@ export async function _listComplaintsFromDB(query: ListComplaintsQuery) {
       createdAt: complaints.createdAt,
       resolvedAt: complaints.resolvedAt,
 
-      studentId: students.id,
-      studentEmail: students.email,
-      studentName: students.name,
-      studentRoll: students.rollNumber,
+      studentId: studentsTable.id,
+      studentEmail: studentsTable.email,
+      studentName: studentsTable.name,
+      studentRoll: studentsTable.rollNumber,
 
       categoryId: categories.id,
       categoryName: categories.name,
@@ -107,7 +109,7 @@ export async function _listComplaintsFromDB(query: ListComplaintsQuery) {
       assignedStaffName: staff.name,
     })
     .from(complaints)
-    .innerJoin(students, eq(students.id, complaints.studentId))
+    .innerJoin(studentsTable, eq(studentsTable.id, complaints.studentId))
     .innerJoin(categories, eq(categories.id, complaints.categoryId))
     .leftJoin(departments, eq(departments.id, complaints.departmentId))
     .leftJoin(staff, eq(staff.id, complaints.assignedStaffId))
@@ -197,10 +199,10 @@ export async function getComplaintById(id: number): Promise<ComplaintDetail | nu
         resolutionNote: complaints.resolutionNote,
 
         // student schema
-        studentId: students.id,
-        studentEmail: students.email,
-        studentName: students.name,
-        studentRoll: students.rollNumber,
+        studentId: studentsTable.id,
+        studentEmail: studentsTable.email,
+        studentName: studentsTable.name,
+        studentRoll: studentsTable.rollNumber,
 
         // from category schema
 
@@ -216,7 +218,7 @@ export async function getComplaintById(id: number): Promise<ComplaintDetail | nu
         assignedStaffName: staff.name,
       })
       .from(complaints)
-      .innerJoin(students, eq(students.id, complaints.studentId))
+      .innerJoin(studentsTable, eq(studentsTable.id, complaints.studentId))
       .innerJoin(categories, eq(categories.id, complaints.categoryId))
       .leftJoin(departments, eq(departments.id, complaints.departmentId))
       .leftJoin(staff, eq(staff.id, complaints.assignedStaffId))
@@ -235,14 +237,14 @@ export async function getComplaintById(id: number): Promise<ComplaintDetail | nu
         studentId: complaintComments.studentId,
         staffId: complaintComments.staffId,
         // from student schema
-        studentName: students.name,
+        studentName: studentsTable.name,
 
         // from staff schema
         staffName: staff.name,
         createdAt: complaintComments.createdAt,
     })
     .from(complaintComments)
-    .leftJoin(students, eq(students.id, complaintComments.studentId))
+    .leftJoin(studentsTable, eq(studentsTable.id, complaintComments.studentId))
     .leftJoin(staff, eq(staff.id, complaintComments.staffId))
     .where(eq(complaintComments.complaintId, id))
     .orderBy(complaintComments.createdAt);
@@ -340,4 +342,71 @@ return {
     statusHistory,
     tags: tagList,
   };
+}
+
+
+
+export async function createComplaints(input: CreateComplaintInput) {
+ // ----- 1. FK pre-checks (fail fast with clear errors) -----
+  const [student] = await db
+    .select({ id: studentsTable.id })
+    .from(studentsTable)
+    .where(eq(studentsTable.id, input.studentId))
+    .limit(1);
+
+    if (!student) {
+    throw ApiError.badRequest(
+      `Student with id ${input.studentId} does not exist`
+    );
+  }
+  const [categor] = await db
+    .select({ id: categories.id })
+    .from(categories)
+    .where(eq(categories.id, input.categoryId))
+    .limit(1);
+
+    if (!categories) {
+    throw ApiError.badRequest(
+      `Category with id ${input.categoryId} does not exist`
+    );
+  }
+
+  // ----- 2. Transactional insert -----
+  const complaintId = await db.transaction(async (tx) => {
+    // 2a. Insert the complaint
+    const [result] = await tx.insert(complaints).values({
+      title: input.title,
+      description: input.description,
+      studentId: input.studentId,
+      categoryId: input.categoryId,
+      location: input.location,
+      building: input.building ?? null,
+      priority: input.priority,
+      status: "open",
+    });
+
+    // MySQL driver returns insertId in `result.insertId`
+    const newId = (result as unknown as { insertId: number }).insertId;
+
+    // 2b. Insert initial status-history row (null → 'open')
+    await tx.insert(complaintStatusHistory).values({
+      complaintId: newId,
+      oldStatus: null,
+      newStatus: "open",
+      changedByStaffId: null,
+      note: "Complaint created",
+    });
+
+    return newId;
+  });
+
+
+  // ----- 3. Cache invalidation (write-invalidate) -----
+  await cache.invalidatePattern("complaints:list:*");
+  logger.debug({ complaintId }, "Complaint created, cache invalidated");
+
+  // ----- 4. Return the full created resource -----
+  return getComplaintById(complaintId);
+  
+
 }
