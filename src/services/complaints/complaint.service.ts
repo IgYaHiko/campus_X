@@ -360,17 +360,24 @@ export async function createComplaints(input: CreateComplaintInput) {
     );
   }
   const [category] = await db
-    .select({ id: categories.id })
+    .select({ 
+        id: categories.id,
+        name: categories.name,
+        defaultDepartmentId: categories.defaultDepartmentId,
+        isActive: categories.isActive,
+    })
     .from(categories)
-    .where(eq(categories.id, input.categoryId))
+    .where(eq(categories.slug, input.categorySlug))
     .limit(1);
 
-    if (!category) {
+    if (!category.isActive) {
     throw ApiError.badRequest(
-      `Category with id ${input.categoryId} does not exist`
+      `Category "${input.categorySlug}" is no longer accepting complaints`
     );
   }
 
+  
+  
   // ----- 2. Transactional insert -----
   const complaintId = await db.transaction(async (tx) => {
     // 2a. Insert the complaint
@@ -378,7 +385,8 @@ export async function createComplaints(input: CreateComplaintInput) {
       title: input.title,
       description: input.description,
       studentId: input.studentId,
-      categoryId: input.categoryId,
+      categoryId: category.id,
+      departmentId: category.defaultDepartmentId, 
       location: input.location,
       building: input.building ?? null,
       priority: input.priority,
@@ -394,18 +402,18 @@ export async function createComplaints(input: CreateComplaintInput) {
       oldStatus: null,
       newStatus: "open",
       changedByStaffId: null,
-      note: "Complaint created",
+      note: `Complaint created (category: ${category.name})`,
     });
 
     return newId;
   });
 
 
-  // ----- 3. Cache invalidation (write-invalidate) -----
+  // ----- 4. Cache invalidation -----
   await cache.invalidatePattern("complaints:list:*");
   logger.debug({ complaintId }, "Complaint created, cache invalidated");
 
-  // ----- 4. Return the full created resource -----
+  // ----- 5. Return full created resource -----
   return getComplaintById(complaintId);
   
 
