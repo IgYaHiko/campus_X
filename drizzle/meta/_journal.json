@@ -15,6 +15,13 @@
       "when": 1792062091362,
       "tag": "0001_redundant_screwball",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1792246203985,
+      "tag": "0002_easy_photon",
+      "breakpoints": true
     }
   ]
 }
