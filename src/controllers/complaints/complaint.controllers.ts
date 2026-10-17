@@ -1,7 +1,8 @@
 import { Request, Response, NextFunction } from "express";
-import { complaintIdParamSchema, createComplaintSchema, listComplaintsQuerySchema } from "../../validators/complaints/complaint.validator";
+import { complaintIdParamSchema, createComplaintSchema, listComplaintsQuerySchema, updateComplaintStatusSchema } from "../../validators/complaints/complaint.validator";
 import * as complaintService from "../../services/complaints/complaint.service";
 import { ApiError } from "../../utils/ApiError";
+import { input } from "zod";
 
 
 export async function listComplaints(req: Request, res: Response, next: NextFunction) {
@@ -56,3 +57,20 @@ export async function createComplaint(req: Request, res: Response, next: NextFun
           next(error)
         }
 }
+
+
+export async function updateComplaintStatus(req: Request, res: Response, next: NextFunction) {
+    try {
+      const {id} = complaintIdParamSchema.parse(req.params);
+      const input = updateComplaintStatusSchema.parse(req.body);
+
+      const complaints = await complaintService.updateComplaintStatus(id, input);
+
+      res.status(200).json({
+        success: true,
+        data: complaints
+      });
+    } catch (error) {
+      next(error);
+    }   
+}   

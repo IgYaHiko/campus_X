@@ -28,7 +28,33 @@ export const createComplaintSchema = z.object({
   priority: z.enum(["low", "medium", "high", "urgent"]).default("medium"),
 })
 
+
+export const updateComplaintStatusSchema = z.object({
+    newStatus: z.enum([
+    "open",
+    "assigned",
+    "in_progress",
+    "resolved",
+    "rejected",
+    "closed",
+  ]),
+
+  // TODO: replace with req.user.id once auth is wired
+  changedByStaffId: z.coerce.number().int().positive().optional(),
+  note: z.string().trim().min(1).max(500).optional(),
+  // Optional: attach resolution note when resolving
+  resolutionNote: z.string().trim().min(1).max(2000).optional(),
+  // Optional: assign staff as part of the transition
+  assignedStaffId: z.coerce.number().int().positive().optional(),
+
+
+})
+
 export type ListComplaintsQuery = z.infer<typeof listComplaintsQuerySchema>;
 export type ComplaintIdParam = z.infer<typeof complaintIdParamSchema>;
 
 export type CreateComplaintInput = z.infer<typeof createComplaintSchema>;
+
+
+export type UpdateComplaintStatusInput = z.infer<typeof updateComplaintStatusSchema>
+
