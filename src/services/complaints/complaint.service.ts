@@ -1,6 +1,6 @@
 
 import { and, desc, eq, like, or, SQL, count } from "drizzle-orm";
-import { CreateComplaintInput, ListComplaintsQuery } from "../../validators/complaints/complaint.validator";
+import { CreateComplaintInput, ListComplaintsQuery, UpdateComplaintStatusInput } from "../../validators/complaints/complaint.validator";
 import { complaints } from "../../db/schema/complaints";
 import { db } from "../../db/client";
 import { students as studentsTable} from "../../db/schema/students";
@@ -16,6 +16,7 @@ import { complaintTags } from "../../db/schema/complaintTags";
 import { cache } from "../../utils/cache";
 import { ApiError } from "../../utils/ApiError";
 import { logger } from "../../config/logger";
+import { canTransition, ComplaintStatus } from "../../utils/statusTransitions";
 
 
 /* It creates a unique cache key based on the filters and pagination.
@@ -416,5 +417,115 @@ export async function createComplaints(input: CreateComplaintInput) {
   // ----- 5. Return full created resource -----
   return getComplaintById(complaintId);
   
+
+}
+
+
+
+
+export async function updateComplaintStatus(
+    id: number,
+    input: UpdateComplaintStatusInput
+) {
+    // ----- 1. Load current complaint -----
+    const [current] = await db.select({
+        id: complaints.id,
+        status: complaints.status,
+        resolvedAt: complaints.resolvedAt,
+    })
+    .from(complaints)
+    .where(eq(complaints.id, id))
+    .limit(1)
+
+
+    if(!current) {
+        throw ApiError.notFound(`Complaint with id ${id} not found`);
+    }
+
+    const from = current.status as ComplaintStatus;
+    const to = input.newStatus as ComplaintStatus;
+
+    if (from === to) {
+      throw ApiError.badRequest(
+      `Complaint is already in status "${from}"`
+    );
+    }
+
+    if (!canTransition(from, to)) {
+        throw ApiError.badRequest(
+        `Cannot transition complaint from "${from}" to "${to}"`);
+    }
+
+
+    // ----- 3. If changedByStaffId is provided, verify staff exists -----
+    if (input.changedByStaffId) {
+    const [staffRow] = await db
+      .select({ id: staff.id })
+      .from(staff)
+      .where(eq(staff.id, input.changedByStaffId))
+      .limit(1);
+
+    if (!staffRow) {
+      throw ApiError.badRequest(
+        `Staff with id ${input.changedByStaffId} does not exist`
+      );
+    }
+  }
+
+  // ----- 4. If assignedStaffId provided on transition to "assigned", verify -----
+  if (input.assignedStaffId) {
+    const [staffRow] = await db
+      .select({ id: staff.id })
+      .from(staff)
+      .where(eq(staff.id, input.assignedStaffId))
+      .limit(1);
+
+    if (!staffRow) {
+      throw ApiError.badRequest(
+        `Staff with id ${input.assignedStaffId} does not exist`
+      );
+    }
+  }
+
+
+   // ----- 5. Compute resolvedAt if transitioning to resolved -----
+  const resolvedAt = to === "resolved" ? new Date() : current.resolvedAt;
+
+  // ----- 6. Transactional update + history insert -----
+  await db.transaction(async (tx) => {
+    await tx
+      .update(complaints)
+      .set({
+        status: to,
+        resolvedAt,
+        ...(input.resolutionNote !== undefined
+          ? { resolutionNote: input.resolutionNote }
+          : {}),
+        ...(input.assignedStaffId !== undefined
+          ? { assignedStaffId: input.assignedStaffId }
+          : {}),
+      })
+      .where(eq(complaints.id, id));
+
+    await tx.insert(complaintStatusHistory).values({
+      complaintId: id,
+      oldStatus: from,
+      newStatus: to,
+      changedByStaffId: input.changedByStaffId ?? null,
+      note:
+        input.note ??
+        `Status changed from "${from}" to "${to}"`,
+    });
+  });
+
+  // ----- 7. Cache invalidation -----
+  await cache.invalidatePattern("complaints:list:*");
+  logger.debug({ complaintId: id, from, to }, "Status updated");
+
+  // ----- 8. Return the full updated resource -----
+  return getComplaintById(id);
+
+
+
 
 }
