@@ -9,6 +9,7 @@ import {
 
 export const categories = mysqlTable("categories", {
   id: int("id").autoincrement().primaryKey(),
+  slug: varchar("slug", { length: 80 }).notNull().unique(), 
   name: varchar("name", { length: 80 }).notNull().unique(),
   description: text("description"),
   // Default department that handles this category (denormalized hint)

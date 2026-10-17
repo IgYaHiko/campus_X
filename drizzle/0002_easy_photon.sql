@@ -1,0 +1,1 @@
+ALTER TABLE `categories` ADD CONSTRAINT `categories_slug_unique` UNIQUE(`slug`);

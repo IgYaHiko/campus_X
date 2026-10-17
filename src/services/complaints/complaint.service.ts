@@ -359,13 +359,13 @@ export async function createComplaints(input: CreateComplaintInput) {
       `Student with id ${input.studentId} does not exist`
     );
   }
-  const [categor] = await db
+  const [category] = await db
     .select({ id: categories.id })
     .from(categories)
     .where(eq(categories.id, input.categoryId))
     .limit(1);
 
-    if (!categories) {
+    if (!category) {
     throw ApiError.badRequest(
       `Category with id ${input.categoryId} does not exist`
     );
