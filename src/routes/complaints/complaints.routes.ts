@@ -17,5 +17,7 @@ router.get("/:id", complaintController.getComplaint);
 // PATCH route /api/v1/complaints
 router.patch("/:id/status", complaintController.updateComplaintStatus);
 
+router.post("/:id/comments", complaintController.createComment);
+
 
 export default router;

@@ -1,9 +1,9 @@
 
 import { and, desc, eq, like, or, SQL, count } from "drizzle-orm";
-import { CreateComplaintInput, ListComplaintsQuery, UpdateComplaintStatusInput } from "../../validators/complaints/complaint.validator";
+import { CreateCommentSchemaInput, CreateComplaintInput, ListComplaintsQuery, UpdateComplaintStatusInput } from "../../validators/complaints/complaint.validator";
 import { complaints } from "../../db/schema/complaints";
 import { db } from "../../db/client";
-import { students as studentsTable} from "../../db/schema/students";
+import { students, students as studentsTable} from "../../db/schema/students";
 import { categories } from "../../db/schema/categories";
 import { departments } from "../../db/schema/department";
 import { staff } from "../../db/schema/staff";
@@ -528,4 +528,117 @@ export async function updateComplaintStatus(
 
 
 
+}
+
+
+
+export async function createComment(
+  complaintId: number,
+  input: CreateCommentSchemaInput
+) {
+  // ----- 1. Ensure the complaint exists -----
+  const [complaint] = await db
+    .select({
+      id: complaints.id,
+      studentId: complaints.studentId,
+    })
+    .from(complaints)
+    .where(eq(complaints.id, complaintId))
+    .limit(1);
+
+  if (!complaint) {
+    throw ApiError.notFound(`Complaint with id ${complaintId} not found`);
+  }
+
+  // ----- 2. Verify the author exists + ownership rules -----
+  if (input.commenterType === "student") {
+    // 2a. Student must exist
+    const [studentRow] = await db
+      .select({ id: studentsTable.id })
+      .from(studentsTable)
+      .where(eq(studentsTable.id, input.studentId!))
+      .limit(1);
+
+    if (!studentRow) {
+      throw ApiError.badRequest(
+        `Student with id ${input.studentId} does not exist`
+      );
+    }
+
+    // 2b. Student must be the complaint's author
+    if (studentRow.id !== complaint.studentId) {
+      throw ApiError.forbidden(
+        `Student ${studentRow.id} is not the author of complaint ${complaintId}`
+      );
+    }
+  } else {
+    // 2c. Staff must exist
+    const [staffRow] = await db
+      .select({ id: staff.id })
+      .from(staff)
+      .where(eq(staff.id, input.staffId!))
+      .limit(1);
+
+    if (!staffRow) {
+      throw ApiError.badRequest(
+        `Staff with id ${input.staffId} does not exist`
+      );
+    }
+    // NOTE: any staff member can comment (supervisors, admins) — we do not
+    // restrict to the assigned staff. That's a policy choice; tighten later.
+  }
+
+  // ----- 3. Insert the comment -----
+  const [result] = await db.insert(complaintComments).values({
+    complaintId,
+    commenterType: input.commenterType,
+    studentId: input.commenterType === "student" ? input.studentId! : null,
+    staffId: input.commenterType === "staff" ? input.staffId! : null,
+    body: input.body,
+  });
+
+  const newId = (result as unknown as { insertId: number }).insertId;
+
+  // ----- 4. Cache invalidation -----
+  await cache.invalidatePattern("complaints:list:*");
+  // If you later cache /complaints/:id, also invalidate that:
+  // await cache.del(`complaints:detail:${complaintId}`);
+
+  logger.debug(
+    { complaintId, commentId: newId },
+    "Comment added to complaint"
+  );
+
+  // ----- 5. Return the created comment with author name -----
+  const [created] = await db
+    .select({
+      id: complaintComments.id,
+      body: complaintComments.body,
+      commenterType: complaintComments.commenterType,
+      studentId: complaintComments.studentId,
+      staffId: complaintComments.staffId,
+      studentName: students.name,
+      staffName: staff.name,
+      createdAt: complaintComments.createdAt,
+    })
+    .from(complaintComments)
+    .leftJoin(students, eq(students.id, complaintComments.studentId))
+    .leftJoin(staff, eq(staff.id, complaintComments.staffId))
+    .where(eq(complaintComments.id, newId))
+    .limit(1);
+
+  return {
+    id: created.id,
+    body: created.body,
+    commenterType: created.commenterType,
+    authorName:
+      created.commenterType === "student"
+        ? (created.studentName ?? "Unknown student")
+        : (created.staffName ?? "Unknown staff"),
+    authorId:
+      created.commenterType === "student"
+        ? (created.studentId ?? 0)
+        : (created.staffId ?? 0),
+    createdAt: created.createdAt,
+  };
 }
