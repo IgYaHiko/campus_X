@@ -50,6 +50,27 @@ export const updateComplaintStatusSchema = z.object({
 
 })
 
+
+export const createCommentSchema = z.object({
+    commenterType: z.enum(["student", "staff"]),
+    studentId: z.coerce.number().int().positive().optional(),
+    staffId: z.coerce.number().int().positive().optional(),
+    body: z.string().trim().min(1).max(2000),
+}) 
+.refine(
+    (data) => {
+      if (data.commenterType === "student") {
+        return data.studentId !== undefined && data.staffId === undefined;
+      }
+      return data.staffId !== undefined && data.studentId === undefined;
+    },
+    {
+      message:
+        "Provide exactly one of studentId (when commenterType='student') or staffId (when commenterType='staff')",
+      path: ["commenterType"],
+    }
+  );
+
 export type ListComplaintsQuery = z.infer<typeof listComplaintsQuerySchema>;
 export type ComplaintIdParam = z.infer<typeof complaintIdParamSchema>;
 
@@ -58,3 +79,4 @@ export type CreateComplaintInput = z.infer<typeof createComplaintSchema>;
 
 export type UpdateComplaintStatusInput = z.infer<typeof updateComplaintStatusSchema>
 
+export type CreateCommentSchemaInput = z.infer<typeof createCommentSchema>;
