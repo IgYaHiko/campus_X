@@ -7,6 +7,7 @@ import {
 
 export const tags = mysqlTable("tags", {
   id: int("id").autoincrement().primaryKey(),
+  slug: varchar("slug", { length: 50 }).notNull().unique(), 
   name: varchar("name", { length: 50 }).notNull().unique(),
   color: varchar("color", { length: 7 }).default("#6B7280").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),

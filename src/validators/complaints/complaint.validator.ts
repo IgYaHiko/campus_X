@@ -71,6 +71,20 @@ export const createCommentSchema = z.object({
     }
   );
 
+
+export const attachTagSchema = z.object({
+    tagSlug: z.string().trim().min(1).max(50),
+})
+
+export const tagSlugParamSchema = z.object({
+  id: z.coerce.number().int().positive(),
+  tagSlug: z.string().trim().min(1).max(50),
+});
+
+
+
+
+
 export type ListComplaintsQuery = z.infer<typeof listComplaintsQuerySchema>;
 export type ComplaintIdParam = z.infer<typeof complaintIdParamSchema>;
 
@@ -80,3 +94,8 @@ export type CreateComplaintInput = z.infer<typeof createComplaintSchema>;
 export type UpdateComplaintStatusInput = z.infer<typeof updateComplaintStatusSchema>
 
 export type CreateCommentSchemaInput = z.infer<typeof createCommentSchema>;
+
+
+export type AttachTagInput = z.infer<typeof attachTagSchema>;
+
+export type TagSlugParam = z.infer<typeof tagSlugParamSchema>;

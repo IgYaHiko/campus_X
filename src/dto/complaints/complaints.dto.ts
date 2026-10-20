@@ -59,6 +59,7 @@ export interface ComplaintStatusChange {
 
 export interface ComplaintTag {
   id: number;
+  slug: string;  
   name: string;
   color: string;
 }
