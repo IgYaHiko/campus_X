@@ -16,8 +16,15 @@ router.get("/:id", complaintController.getComplaint);
 
 // PATCH route /api/v1/complaints
 router.patch("/:id/status", complaintController.updateComplaintStatus);
-
+// POST route /api/v1/comments
 router.post("/:id/comments", complaintController.createComment);
+
+// POST routes /api/v1/:id/tags
+router.post("/:id/tags", complaintController.attachTags);
+
+// DELETE routes /api/v1/:id/tags/:tagSlug
+router.delete("/:id/tags/:tagSlug", complaintController.detachTags); 
+
 
 
 export default router;

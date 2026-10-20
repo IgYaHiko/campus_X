@@ -1,8 +1,7 @@
 import { Request, Response, NextFunction } from "express";
-import { complaintIdParamSchema, createCommentSchema, createComplaintSchema, listComplaintsQuerySchema, updateComplaintStatusSchema } from "../../validators/complaints/complaint.validator";
+import { attachTagSchema, complaintIdParamSchema, createCommentSchema, createComplaintSchema, listComplaintsQuerySchema, tagSlugParamSchema, updateComplaintStatusSchema } from "../../validators/complaints/complaint.validator";
 import * as complaintService from "../../services/complaints/complaint.service";
 import { ApiError } from "../../utils/ApiError";
-import { input } from "zod";
 
 
 export async function listComplaints(req: Request, res: Response, next: NextFunction) {
@@ -91,5 +90,36 @@ export async function createComment(req: Request, res: Response, next: NextFunct
 
     } catch (error) {
       next(error)
+    }
+}
+
+export async function attachTags(req:Request, res: Response, next: NextFunction) {
+    try {
+      const {id} = complaintIdParamSchema.parse(req.params);
+      const input = attachTagSchema.parse(req.body);
+
+      const tags = await complaintService.attachTag(id, input);
+      res.status(201).json({
+        success: true,
+        data: tags
+      })
+    } catch (error) {
+      next(error);
+    }
+}
+
+
+export async function detachTags(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { id, tagSlug } = tagSlugParamSchema.parse(req.params);
+
+      const result = await complaintService.detachTag(id,tagSlug);
+
+      res.status(200).json({
+        success: true,
+        ...result
+      })
+    } catch (error) {
+      next(error);
     }
 }

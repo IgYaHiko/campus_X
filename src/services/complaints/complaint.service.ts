@@ -1,6 +1,6 @@
 
 import { and, desc, eq, like, or, SQL, count } from "drizzle-orm";
-import { CreateCommentSchemaInput, CreateComplaintInput, ListComplaintsQuery, UpdateComplaintStatusInput } from "../../validators/complaints/complaint.validator";
+import { AttachTagInput, CreateCommentSchemaInput, CreateComplaintInput, ListComplaintsQuery, UpdateComplaintStatusInput } from "../../validators/complaints/complaint.validator";
 import { complaints } from "../../db/schema/complaints";
 import { db } from "../../db/client";
 import { students, students as studentsTable} from "../../db/schema/students";
@@ -17,6 +17,7 @@ import { cache } from "../../utils/cache";
 import { ApiError } from "../../utils/ApiError";
 import { logger } from "../../config/logger";
 import { canTransition, ComplaintStatus } from "../../utils/statusTransitions";
+import { findTagBySlug } from "../tags/tag.service";
 
 
 /* It creates a unique cache key based on the filters and pagination.
@@ -271,6 +272,7 @@ export async function getComplaintById(id: number): Promise<ComplaintDetail | nu
     // tags from complaintTags schema 
     const tagsRow = await db.select({
         id: tags.id,
+        slug: tags.slug,        
         name: tags.name,
         color: tags.color,
     })
@@ -306,6 +308,7 @@ export async function getComplaintById(id: number): Promise<ComplaintDetail | nu
 
    const tagList: ComplaintTag[] = tagsRow.map((t) => ({
     id: t.id,
+    slug: t.slug,  
     name: t.name,
     color: t.color,
   }));
@@ -641,4 +644,86 @@ export async function createComment(
         : (created.staffId ?? 0),
     createdAt: created.createdAt,
   };
+}
+
+
+
+export async function attachTag(complaintId: number, input: AttachTagInput) {
+
+     // ----- 1. Verify complaint exists -----
+    const [complaint] = await db
+    .select({ id: complaints.id })
+    .from(complaints)
+    .where(eq(complaints.id, complaintId))
+    .limit(1);
+
+    if (!complaint) {
+    throw ApiError.notFound(`Complaint with id ${complaintId} not found`);
+  }
+
+  // ----- 2. Resolve tag by slug -----
+  const tag = await findTagBySlug(input.tagSlug);
+  if (!tag) {
+    throw ApiError.badRequest(`Unknown tag: ${input.tagSlug}`);
+  }
+
+   // ----- 3. Idempotent insert -----
+  try {
+    await db.insert(complaintTags).values({
+      complaintId,
+      tagId: tag.id,
+    });
+  } catch (err) {
+    if ((err as { code?: string }).code === "ER_DUP_ENTRY") {
+      logger.debug(
+        { complaintId, tagSlug: input.tagSlug },
+        "Tag already attached — no-op"
+      );
+    } else {
+      throw err;
+    }
+  }
+
+   // ----- 4. Cache invalidation -----
+  await cache.invalidatePattern("complaints:list:*");
+  return { id: tag.id, slug: tag.slug, name: tag.name, color: tag.color };
+
+}
+
+
+
+export async function detachTag(complaintId: number, tagSlug: string) {
+  // ----- 1. Verify complaint exists -----
+  const [complaint] = await db
+    .select({ id: complaints.id })
+    .from(complaints)
+    .where(eq(complaints.id, complaintId))
+    .limit(1);
+
+  if (!complaint) {
+    throw ApiError.notFound(`Complaint with id ${complaintId} not found`);
+  }
+
+  // ----- 2. Resolve tag by slug -----
+  const tag = await findTagBySlug(tagSlug);
+  if (!tag) {
+    throw ApiError.badRequest(`Unknown tag: ${tagSlug}`);
+  }
+
+  // ----- 3. Delete pairing (idempotent) -----
+  const [result] = await db
+    .delete(complaintTags)
+    .where(
+      and(
+        eq(complaintTags.complaintId, complaintId),
+        eq(complaintTags.tagId, tag.id)
+      )
+    );
+
+  const deleted = (result as unknown as { affectedRows: number }).affectedRows;
+
+  // ----- 4. Cache invalidation -----
+  await cache.invalidatePattern("complaints:list:*");
+
+  return { deleted: deleted > 0 };
 }
