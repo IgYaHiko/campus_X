@@ -83,6 +83,11 @@ export const tagSlugParamSchema = z.object({
 
 
 
+export const assignComplaintSchema = z.object({
+    staffEmail: z.string().email(),
+    adminEmail: z.string().email(),
+})
+
 
 
 export type ListComplaintsQuery = z.infer<typeof listComplaintsQuerySchema>;
@@ -99,3 +104,6 @@ export type CreateCommentSchemaInput = z.infer<typeof createCommentSchema>;
 export type AttachTagInput = z.infer<typeof attachTagSchema>;
 
 export type TagSlugParam = z.infer<typeof tagSlugParamSchema>;
+
+
+export type AssignComplaintInput = z.infer<typeof assignComplaintSchema>;

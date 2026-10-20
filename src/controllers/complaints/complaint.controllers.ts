@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { attachTagSchema, complaintIdParamSchema, createCommentSchema, createComplaintSchema, listComplaintsQuerySchema, tagSlugParamSchema, updateComplaintStatusSchema } from "../../validators/complaints/complaint.validator";
+import { assignComplaintSchema, attachTagSchema, complaintIdParamSchema, createCommentSchema, createComplaintSchema, listComplaintsQuerySchema, tagSlugParamSchema, updateComplaintStatusSchema } from "../../validators/complaints/complaint.validator";
 import * as complaintService from "../../services/complaints/complaint.service";
 import { ApiError } from "../../utils/ApiError";
 
@@ -122,4 +122,21 @@ export async function detachTags(req: Request, res: Response, next: NextFunction
     } catch (error) {
       next(error);
     }
+}
+
+export async function assignComplaint(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const { id } = complaintIdParamSchema.parse(req.params);
+    const input = assignComplaintSchema.parse(req.body);
+
+    const complaint = await complaintService.assignComplaint(id, input);
+
+    res.status(200).json({ success: true, data: complaint });
+  } catch (err) {
+    next(err);
+  }
 }

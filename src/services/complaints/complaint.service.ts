@@ -1,6 +1,6 @@
 
-import { and, desc, eq, like, or, SQL, count } from "drizzle-orm";
-import { AttachTagInput, CreateCommentSchemaInput, CreateComplaintInput, ListComplaintsQuery, UpdateComplaintStatusInput } from "../../validators/complaints/complaint.validator";
+import { and, desc, eq, like, or, SQL, count, sql } from "drizzle-orm";
+import { AssignComplaintInput, AttachTagInput, CreateCommentSchemaInput, CreateComplaintInput, ListComplaintsQuery, UpdateComplaintStatusInput } from "../../validators/complaints/complaint.validator";
 import { complaints } from "../../db/schema/complaints";
 import { db } from "../../db/client";
 import { students, students as studentsTable} from "../../db/schema/students";
@@ -726,4 +726,43 @@ export async function detachTag(complaintId: number, tagSlug: string) {
   await cache.invalidatePattern("complaints:list:*");
 
   return { deleted: deleted > 0 };
+}
+
+
+export async function assignComplaint(
+  complaintId: number,
+  input: AssignComplaintInput
+) {
+  // 1. Verify complaint exists (so we return 404, not a MySQL error)
+  const [complaint] = await db
+    .select({ id: complaints.id })
+    .from(complaints)
+    .where(eq(complaints.id, complaintId))
+    .limit(1);
+
+  if (!complaint) {
+    throw ApiError.notFound(`Complaint with id ${complaintId} not found`);
+  }
+
+  // 2. Call the Stored Procedure
+  try {
+    await db.execute(
+      sql`CALL sp_assign_complaint(${complaintId}, ${input.staffEmail}, ${input.adminEmail})`
+    );
+  } catch (err: any) {
+    // Catch the custom SIGNAL errors from MySQL
+    if (err.sqlMessage?.includes('Staff email not found')) {
+      throw ApiError.badRequest(`Staff with email ${input.staffEmail} does not exist`);
+    }
+    if (err.sqlMessage?.includes('Admin email not found')) {
+      throw ApiError.badRequest(`Admin with email ${input.adminEmail} does not exist`);
+    }
+    throw err; // Throw other DB errors to global handler
+  }
+
+  // 3. Cache Invalidation
+  await cache.invalidatePattern("complaints:list:*");
+
+  // 4. Return updated complaint
+  return getComplaintById(complaintId);
 }
