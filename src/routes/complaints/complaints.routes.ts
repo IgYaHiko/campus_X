@@ -25,6 +25,9 @@ router.post("/:id/tags", complaintController.attachTags);
 // DELETE routes /api/v1/:id/tags/:tagSlug
 router.delete("/:id/tags/:tagSlug", complaintController.detachTags); 
 
+router.post("/:id/assign", complaintController.assignComplaint);
+
+
 
 
 export default router;
