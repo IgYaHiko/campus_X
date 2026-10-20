@@ -34,6 +34,7 @@ services:
 
   mysql:
     image: mysql:8.0
+    command: --log-bin-trust-function-creators=1 
     container_name: campusfix-mysql
     restart: unless-stopped
     environment:
