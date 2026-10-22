@@ -1,6 +1,5 @@
-import { eq, sql } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 import { db } from "../../db/client";
-import { departments } from "../../db/schema/department";
 import { DepartmentWorkload, SystemStats } from "../../dto/reports/report.dto";
 import { complaints } from "../../db/schema/complaints";
 

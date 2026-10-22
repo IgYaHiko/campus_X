@@ -7,7 +7,8 @@ import { notFound } from "./middlewares/notFound";
 import { errorHandler } from "./middlewares/errorHandler";
 import { redis } from "./config/redis";
 import { pingDB } from "./config/db";
-
+import swaggerUi from "swagger-ui-express";
+import { swaggerSpec } from "./config/swagger";
 const app: Application = express();
 
 // Request logging — quiet by default, loud on errors
@@ -29,6 +30,17 @@ app.use(
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+/**
+ * @openapi
+ * /health:
+ *   get:
+ *     tags: [Health]
+ *     summary: System health check
+ *     responses:
+ *       200:
+ *         description: Returns API, Redis, and MySQL status
+ */
 
 // Health check route
 app.get("/health", async (_req: Request, res: Response) => {
@@ -55,16 +67,27 @@ app.get("/health", async (_req: Request, res: Response) => {
   });
 });
 
-app.get("/hi", (_req, res) => {
-  res.status(200).json({
-    success: true,
-    message: "CampusX Api is running fucker DW",
-  });
-});
 
 
 
 app.use("/api/v1", apiRoutes)
+
+app.use(
+  "/api-docs",
+  swaggerUi.serve,
+  swaggerUi.setup(swaggerSpec, {
+    customSiteTitle: "CampusFix API Docs",
+    swaggerOptions: {
+      persistAuthorization: true,
+    },
+  })
+);
+
+// Also expose the raw JSON spec (useful for client generators)
+app.get("/api-docs.json", (_req, res) => {
+  res.setHeader("Content-Type", "application/json");
+  res.send(swaggerSpec);
+});
 
 // 404 handler — after all routes
 app.use(notFound);

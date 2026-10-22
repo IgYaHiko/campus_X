@@ -22,7 +22,7 @@ export async function getUnassignedStaff() {
 export async function getSilentStudents() {
     // Subquery: Find students who filed a complaint but never commented
     const result = await db.execute(sql`
-        SELECT s.id, s.name, s.email,
+        SELECT s.id, s.name, s.email
         FROM students s 
         WHERE EXISTS (
             SELECT 1 FROM complaints c WHERE c.student_id = s.id
