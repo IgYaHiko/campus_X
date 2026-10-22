@@ -24,6 +24,10 @@ const envSchema = z.object({
   DB_USER: z.string().default("root"),
   DB_PASSWORD: z.string().default(""),
   DB_NAME: z.string().default("campusfix"),
+  JWT_SECRET: z.string().min(10),
+  JWT_EXPIRES_IN: z.string().default("7d"),
+  GOOGLE_CLIENT_ID: z.string().optional(),
+
 
   
   
@@ -52,5 +56,9 @@ export const env = {
   DB_NAME: parsed.data.DB_NAME,
   isDev: parsed.data.NODE_ENV === "development",
   isProd: parsed.data.NODE_ENV === "production",
+  JWT_SECRET: parsed.data.JWT_SECRET,
+  JWT_EXPIRES_IN: parsed.data.JWT_EXPIRES_IN,
+  GOOGLE_CLIENT_ID: parsed.data.GOOGLE_CLIENT_ID,
+
   
 };
