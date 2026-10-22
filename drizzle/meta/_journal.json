@@ -29,6 +29,13 @@
       "when": 1792493279543,
       "tag": "0003_puzzling_gabe_jones",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "5",
+      "when": 1792668703737,
+      "tag": "0004_create_view_department_workload",
+      "breakpoints": true
     }
   ]
 }

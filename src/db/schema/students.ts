@@ -11,7 +11,8 @@ export const students = mysqlTable("students", {
   rollNumber: varchar("roll_number", { length: 30 }).notNull().unique(),
   name: varchar("name", { length: 100 }).notNull(),
   email: varchar("email", { length: 150 }).notNull().unique(),
-  passwordHash: varchar("password_hash", { length: 255 }).notNull(),
+  passwordHash: varchar("password_hash", { length: 255 }),
+  googleId: varchar("google_id", { length: 255 }).unique(),
   phone: varchar("phone", { length: 20 }),           // ← nullable now
   departmentId: int("department_id"),                // FK added in migration 0001
   year: int("year"),

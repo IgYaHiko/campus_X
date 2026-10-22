@@ -28,7 +28,7 @@ CREATE TABLE `__drizzle_migrations` (
   `created_at` bigint DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `id` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -37,7 +37,7 @@ CREATE TABLE `__drizzle_migrations` (
 
 LOCK TABLES `__drizzle_migrations` WRITE;
 /*!40000 ALTER TABLE `__drizzle_migrations` DISABLE KEYS */;
-INSERT INTO `__drizzle_migrations` VALUES (1,'dfc916d6c0ec50783d1cd1d7d5880b399dd53a6b5dc1706b8f69b4685a9e85ec',1791910058784),(2,'0001_add_foreign_keys_manual',1792061849000),(3,'3c4eea8d3333be650c9a46ab1c530fc6718d8cfdcbbbd0d6688a93a082273aba',1792062091362);
+INSERT INTO `__drizzle_migrations` VALUES (1,'dfc916d6c0ec50783d1cd1d7d5880b399dd53a6b5dc1706b8f69b4685a9e85ec',1791910058784),(2,'0001_add_foreign_keys_manual',1792061849000),(3,'3c4eea8d3333be650c9a46ab1c530fc6718d8cfdcbbbd0d6688a93a082273aba',1792062091362),(4,'228b5d09ba31b58da036729558cb3667007b9b8a8b30f398a3794075794f771a',1792246203985);
 /*!40000 ALTER TABLE `__drizzle_migrations` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -58,6 +58,7 @@ CREATE TABLE `categories` (
   `slug` varchar(80) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `categories_name_unique` (`name`),
+  UNIQUE KEY `categories_slug_unique` (`slug`),
   KEY `fk_categories_default_department` (`default_department_id`),
   CONSTRAINT `fk_categories_default_department` FOREIGN KEY (`default_department_id`) REFERENCES `departments` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
@@ -95,7 +96,7 @@ CREATE TABLE `complaint_comments` (
   CONSTRAINT `fk_comments_complaint` FOREIGN KEY (`complaint_id`) REFERENCES `complaints` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `fk_comments_staff` FOREIGN KEY (`staff_id`) REFERENCES `staff` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT `fk_comments_student` FOREIGN KEY (`student_id`) REFERENCES `students` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -104,7 +105,7 @@ CREATE TABLE `complaint_comments` (
 
 LOCK TABLES `complaint_comments` WRITE;
 /*!40000 ALTER TABLE `complaint_comments` DISABLE KEYS */;
-INSERT INTO `complaint_comments` VALUES (1,1,'staff',NULL,2,'Assigned to IT team. Investigating router configuration.','2026-10-15 11:55:00'),(2,1,'student',1,NULL,'Thank you. It has been down for 4 hours now.','2026-10-15 11:55:00'),(3,1,'staff',NULL,2,'Router replacement ordered. Should be resolved by EOD.','2026-10-15 11:55:00'),(4,3,'staff',NULL,3,'Urgent â€” sending team to inspect the ceiling immediately.','2026-10-15 11:55:00'),(5,3,'student',3,NULL,'Please hurry, it is getting worse.','2026-10-15 11:55:00'),(6,7,'staff',NULL,1,'Socket isolated. Electrician on site now.','2026-10-15 11:55:00'),(7,7,'student',7,NULL,'Thanks for the quick response.','2026-10-15 11:55:00'),(8,9,'staff',NULL,6,'Which projector model is it? Sending someone shortly.','2026-10-15 11:55:00'),(9,9,'student',9,NULL,'It is a BenQ MX560P.','2026-10-15 11:55:00'),(10,12,'staff',NULL,3,'Fan replaced. Marking as closed.','2026-10-15 11:55:00');
+INSERT INTO `complaint_comments` VALUES (1,1,'staff',NULL,2,'Assigned to IT team. Investigating router configuration.','2026-10-15 11:55:00'),(2,1,'student',1,NULL,'Thank you. It has been down for 4 hours now.','2026-10-15 11:55:00'),(3,1,'staff',NULL,2,'Router replacement ordered. Should be resolved by EOD.','2026-10-15 11:55:00'),(4,3,'staff',NULL,3,'Urgent â€” sending team to inspect the ceiling immediately.','2026-10-15 11:55:00'),(5,3,'student',3,NULL,'Please hurry, it is getting worse.','2026-10-15 11:55:00'),(6,7,'staff',NULL,1,'Socket isolated. Electrician on site now.','2026-10-15 11:55:00'),(7,7,'student',7,NULL,'Thanks for the quick response.','2026-10-15 11:55:00'),(8,9,'staff',NULL,6,'Which projector model is it? Sending someone shortly.','2026-10-15 11:55:00'),(9,9,'student',9,NULL,'It is a BenQ MX560P.','2026-10-15 11:55:00'),(10,12,'staff',NULL,3,'Fan replaced. Marking as closed.','2026-10-15 11:55:00'),(11,1,'student',1,NULL,'Any update on this? The lab session is in 2 hours.','2026-10-18 18:58:47'),(12,1,'student',1,NULL,'Any update on this? The lab session is in 2 hours.','2026-10-22 11:03:10');
 /*!40000 ALTER TABLE `complaint_comments` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -129,7 +130,7 @@ CREATE TABLE `complaint_status_history` (
   KEY `fk_history_changed_by_staff` (`changed_by_staff_id`),
   CONSTRAINT `fk_history_changed_by_staff` FOREIGN KEY (`changed_by_staff_id`) REFERENCES `staff` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT `fk_history_complaint` FOREIGN KEY (`complaint_id`) REFERENCES `complaints` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=22 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=27 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -138,7 +139,7 @@ CREATE TABLE `complaint_status_history` (
 
 LOCK TABLES `complaint_status_history` WRITE;
 /*!40000 ALTER TABLE `complaint_status_history` DISABLE KEYS */;
-INSERT INTO `complaint_status_history` VALUES (1,1,'open','assigned',6,'Auto-assigned to IT department.','2026-10-15 11:55:00'),(2,1,'assigned','in_progress',2,'Working on router config.','2026-10-15 11:55:00'),(3,2,'open','assigned',6,'Assigned to Electrical.','2026-10-15 11:55:00'),(4,3,'open','open',NULL,'Complaint created.','2026-10-15 11:55:00'),(5,4,'open','assigned',6,'Assigned to Housekeeping.','2026-10-15 11:55:00'),(6,4,'assigned','in_progress',4,'Cleanup started.','2026-10-15 11:55:00'),(7,4,'in_progress','resolved',4,'Dustbin cleared.','2026-10-15 11:55:00'),(8,7,'open','assigned',6,'Urgent â€” assigned to Electrical head.','2026-10-15 11:55:00'),(9,7,'assigned','in_progress',1,'Electrician inspecting socket.','2026-10-15 11:55:00'),(10,8,'open','assigned',6,'Assigned to Plumbing.','2026-10-15 11:55:00'),(11,8,'assigned','in_progress',5,'Tap washer replacement.','2026-10-15 11:55:00'),(12,8,'in_progress','resolved',5,'Tap repaired.','2026-10-15 11:55:00'),(13,11,'open','assigned',6,'Assigned to IT.','2026-10-15 11:55:00'),(14,11,'assigned','in_progress',2,'Optimizing access point.','2026-10-15 11:55:00'),(15,11,'in_progress','resolved',2,'Speed restored.','2026-10-15 11:55:00'),(16,12,'open','assigned',6,'Assigned to Civil.','2026-10-15 11:55:00'),(17,12,'assigned','in_progress',3,'Fan replacement in progress.','2026-10-15 11:55:00'),(18,12,'in_progress','resolved',3,'Fan replaced.','2026-10-15 11:55:00'),(19,12,'resolved','closed',6,'Verified by admin.','2026-10-15 11:55:00'),(20,13,NULL,'open',NULL,'Complaint created','2026-10-16 18:51:23'),(21,14,NULL,'open',NULL,'Complaint created','2026-10-16 18:53:43');
+INSERT INTO `complaint_status_history` VALUES (1,1,'open','assigned',6,'Auto-assigned to IT department.','2026-10-15 11:55:00'),(2,1,'assigned','in_progress',2,'Working on router config.','2026-10-15 11:55:00'),(3,2,'open','assigned',6,'Assigned to Electrical.','2026-10-15 11:55:00'),(4,3,'open','open',NULL,'Complaint created.','2026-10-15 11:55:00'),(5,4,'open','assigned',6,'Assigned to Housekeeping.','2026-10-15 11:55:00'),(6,4,'assigned','in_progress',4,'Cleanup started.','2026-10-15 11:55:00'),(7,4,'in_progress','resolved',4,'Dustbin cleared.','2026-10-15 11:55:00'),(8,7,'open','assigned',6,'Urgent â€” assigned to Electrical head.','2026-10-15 11:55:00'),(9,7,'assigned','in_progress',1,'Electrician inspecting socket.','2026-10-15 11:55:00'),(10,8,'open','assigned',6,'Assigned to Plumbing.','2026-10-15 11:55:00'),(11,8,'assigned','in_progress',5,'Tap washer replacement.','2026-10-15 11:55:00'),(12,8,'in_progress','resolved',5,'Tap repaired.','2026-10-15 11:55:00'),(13,11,'open','assigned',6,'Assigned to IT.','2026-10-15 11:55:00'),(14,11,'assigned','in_progress',2,'Optimizing access point.','2026-10-15 11:55:00'),(15,11,'in_progress','resolved',2,'Speed restored.','2026-10-15 11:55:00'),(16,12,'open','assigned',6,'Assigned to Civil.','2026-10-15 11:55:00'),(17,12,'assigned','in_progress',3,'Fan replacement in progress.','2026-10-15 11:55:00'),(18,12,'in_progress','resolved',3,'Fan replaced.','2026-10-15 11:55:00'),(19,12,'resolved','closed',6,'Verified by admin.','2026-10-15 11:55:00'),(20,13,NULL,'open',NULL,'Complaint created','2026-10-16 18:51:23'),(21,14,NULL,'open',NULL,'Complaint created','2026-10-16 18:53:43'),(22,15,NULL,'open',NULL,'Complaint created (category: Furniture Damage)','2026-10-17 15:36:50'),(23,3,'open','assigned',6,'Assigned to Rakesh for inspection','2026-10-17 16:22:14'),(24,4,'resolved','assigned',NULL,'Automated trigger log','2026-10-20 16:26:55'),(25,4,'resolved','assigned',6,'Assigned to staff rakesh.kumar@campusfix.edu via stored procedure','2026-10-20 16:26:55'),(26,4,'assigned','assigned',6,'Assigned to staff rakesh.kumar@campusfix.edu via stored procedure','2026-10-22 11:03:12');
 /*!40000 ALTER TABLE `complaint_status_history` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -204,7 +205,7 @@ CREATE TABLE `complaints` (
   CONSTRAINT `fk_complaints_category` FOREIGN KEY (`category_id`) REFERENCES `categories` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT `fk_complaints_department` FOREIGN KEY (`department_id`) REFERENCES `departments` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT `fk_complaints_student` FOREIGN KEY (`student_id`) REFERENCES `students` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=15 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=16 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -213,9 +214,32 @@ CREATE TABLE `complaints` (
 
 LOCK TABLES `complaints` WRITE;
 /*!40000 ALTER TABLE `complaints` DISABLE KEYS */;
-INSERT INTO `complaints` VALUES (1,'Wi-Fi not working in Lab 204','The Wi-Fi in CS Lab 204 has been down since morning. Cannot connect to any network.',1,1,'CS Lab 204','Academic Block A','high','in_progress',3,2,NULL,NULL,'2026-10-15 11:55:00','2026-10-15 11:55:00'),(2,'Flickering lights in Hostel B corridor','Lights in the second-floor corridor flicker constantly. Possible loose connection.',2,2,'Hostel B, 2nd Floor','Hostel B','medium','assigned',1,3,NULL,NULL,'2026-10-15 11:55:00','2026-10-15 11:55:00'),(3,'Water leakage from washroom ceiling','Water is dripping from the ceiling near the washroom entrance. Floor becoming slippery.',3,3,'Washroom near Canteen','Main Building','urgent','open',2,NULL,NULL,NULL,'2026-10-15 11:55:00','2026-10-15 11:55:00'),(4,'Dustbin not cleared for 3 days','The dustbin near Room 101 has not been emptied. Strong smell developing.',4,4,'Room 101','Academic Block B','medium','resolved',4,4,NULL,NULL,'2026-10-15 11:55:00','2026-10-15 11:55:00'),(5,'Broken chair in Library','Chair at reading table 5 has a broken leg. Unsafe to sit.',5,5,'Library Reading Hall','Library','low','open',5,NULL,NULL,NULL,'2026-10-15 11:55:00','2026-10-15 11:55:00'),(6,'AC not cooling in Seminar Hall','AC unit in Seminar Hall runs but does not cool. Room becomes very hot during presentations.',6,1,'Seminar Hall','Academic Block A','high','assigned',3,2,NULL,NULL,'2026-10-15 11:55:00','2026-10-15 11:55:00'),(7,'Spark from power socket in Lab 101','Power socket in Lab 101 sparked when plugging in a laptop. Please inspect urgently.',7,2,'EE Lab 101','Academic Block C','urgent','in_progress',1,1,NULL,NULL,'2026-10-15 11:55:00','2026-10-15 11:55:00'),(8,'Tap leaking in Boys Hostel washroom','One of the taps in the first-floor washroom keeps dripping continuously.',8,3,'Hostel A, 1st floor washroom','Hostel A','low','resolved',2,5,NULL,NULL,'2026-10-15 11:55:00','2026-10-15 11:55:00'),(9,'Projector not turning on','The projector in Lecture Hall 3 does not turn on. Class presentations are affected.',9,6,'Lecture Hall 3','Academic Block B','medium','open',NULL,NULL,NULL,NULL,'2026-10-15 11:55:00','2026-10-15 11:55:00'),(10,'Broken window in Room 208','Window pane in Room 208 is cracked and lets in rainwater.',10,5,'Room 208','Academic Block A','medium','assigned',5,5,NULL,NULL,'2026-10-15 11:55:00','2026-10-15 11:55:00'),(11,'Wi-Fi speed extremely slow in Library','Wi-Fi works but speed is unusable. Cannot access online resources.',1,1,'Library','Library','medium','resolved',3,2,NULL,NULL,'2026-10-15 11:55:00','2026-10-15 11:55:00'),(12,'Ceiling fan making loud noise','Fan in Room 305 makes loud rattling sound. Distracts during lectures.',2,6,'Room 305','Academic Block C','low','closed',NULL,NULL,NULL,NULL,'2026-10-15 11:55:00','2026-10-15 11:55:00'),(13,'Air conditioner not working in Room 401','The AC unit in Room 401 has not been cooling since yesterday evening. Room becomes unusable during afternoon lectures.',1,2,'Room 401','Academic Block A','high','open',NULL,NULL,NULL,NULL,'2026-10-16 18:51:23','2026-10-16 18:51:23'),(14,'Vs code nehi chal raha thik karke jao','The AC unit in Room 401 has not been cooling since yesterday evening.',2,3,'Room 201','Academic Block A','low','open',NULL,NULL,NULL,NULL,'2026-10-16 18:53:43','2026-10-16 18:53:43');
+INSERT INTO `complaints` VALUES (1,'Wi-Fi not working in Lab 204','The Wi-Fi in CS Lab 204 has been down since morning. Cannot connect to any network.',1,1,'CS Lab 204','Academic Block A','high','in_progress',3,2,NULL,NULL,'2026-10-15 11:55:00','2026-10-15 11:55:00'),(2,'Flickering lights in Hostel B corridor','Lights in the second-floor corridor flicker constantly. Possible loose connection.',2,2,'Hostel B, 2nd Floor','Hostel B','medium','assigned',1,3,NULL,NULL,'2026-10-15 11:55:00','2026-10-15 11:55:00'),(3,'Water leakage from washroom ceiling','Water is dripping from the ceiling near the washroom entrance. Floor becoming slippery.',3,3,'Washroom near Canteen','Main Building','urgent','assigned',2,1,NULL,NULL,'2026-10-15 11:55:00','2026-10-17 16:22:14'),(4,'Dustbin not cleared for 3 days','The dustbin near Room 101 has not been emptied. Strong smell developing.',4,4,'Room 101','Academic Block B','medium','assigned',4,1,NULL,NULL,'2026-10-15 11:55:00','2026-10-22 11:03:12'),(5,'Broken chair in Library','Chair at reading table 5 has a broken leg. Unsafe to sit.',5,5,'Library Reading Hall','Library','low','open',5,NULL,NULL,NULL,'2026-10-15 11:55:00','2026-10-15 11:55:00'),(6,'AC not cooling in Seminar Hall','AC unit in Seminar Hall runs but does not cool. Room becomes very hot during presentations.',6,1,'Seminar Hall','Academic Block A','high','assigned',3,2,NULL,NULL,'2026-10-15 11:55:00','2026-10-15 11:55:00'),(7,'Spark from power socket in Lab 101','Power socket in Lab 101 sparked when plugging in a laptop. Please inspect urgently.',7,2,'EE Lab 101','Academic Block C','urgent','in_progress',1,1,NULL,NULL,'2026-10-15 11:55:00','2026-10-15 11:55:00'),(8,'Tap leaking in Boys Hostel washroom','One of the taps in the first-floor washroom keeps dripping continuously.',8,3,'Hostel A, 1st floor washroom','Hostel A','low','resolved',2,5,NULL,NULL,'2026-10-15 11:55:00','2026-10-15 11:55:00'),(9,'Projector not turning on','The projector in Lecture Hall 3 does not turn on. Class presentations are affected.',9,6,'Lecture Hall 3','Academic Block B','medium','open',NULL,NULL,NULL,NULL,'2026-10-15 11:55:00','2026-10-15 11:55:00'),(10,'Broken window in Room 208','Window pane in Room 208 is cracked and lets in rainwater.',10,5,'Room 208','Academic Block A','medium','assigned',5,5,NULL,NULL,'2026-10-15 11:55:00','2026-10-15 11:55:00'),(11,'Wi-Fi speed extremely slow in Library','Wi-Fi works but speed is unusable. Cannot access online resources.',1,1,'Library','Library','medium','resolved',3,2,NULL,NULL,'2026-10-15 11:55:00','2026-10-15 11:55:00'),(12,'Ceiling fan making loud noise','Fan in Room 305 makes loud rattling sound. Distracts during lectures.',2,6,'Room 305','Academic Block C','low','closed',NULL,NULL,NULL,NULL,'2026-10-15 11:55:00','2026-10-15 11:55:00'),(13,'Air conditioner not working in Room 401','The AC unit in Room 401 has not been cooling since yesterday evening. Room becomes unusable during afternoon lectures.',1,2,'Room 401','Academic Block A','high','open',NULL,NULL,NULL,NULL,'2026-10-16 18:51:23','2026-10-16 18:51:23'),(14,'Vs code nehi chal raha thik karke jao','The AC unit in Room 401 has not been cooling since yesterday evening.',2,3,'Room 201','Academic Block A','low','open',NULL,NULL,NULL,NULL,'2026-10-16 18:53:43','2026-10-16 18:53:43'),(15,'Printer jammed in Computer Lab','Printer in CS lab 201 is jammed and shows error light. Cannot print assignments.',1,5,'CS Lab 201','Academic Block A','medium','open',5,NULL,NULL,NULL,'2026-10-17 15:36:50','2026-10-17 15:36:50');
 /*!40000 ALTER TABLE `complaints` ENABLE KEYS */;
 UNLOCK TABLES;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = latin1 */ ;
+/*!50003 SET character_set_results = latin1 */ ;
+/*!50003 SET collation_connection  = latin1_swedish_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`campusfix`@`%`*/ /*!50003 TRIGGER `trg_complaint_status_change` AFTER UPDATE ON `complaints` FOR EACH ROW BEGIN
+    
+    IF OLD.status <> NEW.status THEN
+        INSERT INTO `complaint_status_history` 
+            (complaint_id, old_status, new_status, changed_by_staff_id, note, changed_at)
+        VALUES 
+            (NEW.id, OLD.status, NEW.status, NULL, 'Automated trigger log', NOW());
+    END IF;
+END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
 
 --
 -- Table structure for table `departments`
@@ -357,8 +381,10 @@ CREATE TABLE `tags` (
   `name` varchar(50) NOT NULL,
   `color` varchar(7) NOT NULL DEFAULT '#6B7280',
   `created_at` timestamp NOT NULL DEFAULT (now()),
+  `slug` varchar(50) NOT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `tags_name_unique` (`name`)
+  UNIQUE KEY `tags_name_unique` (`name`),
+  UNIQUE KEY `tags_slug_unique` (`slug`)
 ) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -368,9 +394,44 @@ CREATE TABLE `tags` (
 
 LOCK TABLES `tags` WRITE;
 /*!40000 ALTER TABLE `tags` DISABLE KEYS */;
-INSERT INTO `tags` VALUES (1,'Urgent','#EF4444','2026-10-15 11:55:00'),(2,'Recurring','#F59E0B','2026-10-15 11:55:00'),(3,'Safety','#DC2626','2026-10-15 11:55:00'),(4,'Wi-Fi','#3B82F6','2026-10-15 11:55:00'),(5,'Electrical','#8B5CF6','2026-10-15 11:55:00'),(6,'Water','#06B6D4','2026-10-15 11:55:00'),(7,'Cleanliness','#10B981','2026-10-15 11:55:00'),(8,'Furniture','#A16207','2026-10-15 11:55:00');
+INSERT INTO `tags` VALUES (1,'Urgent','#EF4444','2026-10-15 11:55:00','urgent'),(2,'Recurring','#F59E0B','2026-10-15 11:55:00','recurring'),(3,'Safety','#DC2626','2026-10-15 11:55:00','safety'),(4,'Wi-Fi','#3B82F6','2026-10-15 11:55:00','wi-fi'),(5,'Electrical','#8B5CF6','2026-10-15 11:55:00','electrical'),(6,'Water','#06B6D4','2026-10-15 11:55:00','water'),(7,'Cleanliness','#10B981','2026-10-15 11:55:00','cleanliness'),(8,'Furniture','#A16207','2026-10-15 11:55:00','furniture');
 /*!40000 ALTER TABLE `tags` ENABLE KEYS */;
 UNLOCK TABLES;
+
+--
+-- Temporary view structure for view `v_department_workload`
+--
+
+DROP TABLE IF EXISTS `v_department_workload`;
+/*!50001 DROP VIEW IF EXISTS `v_department_workload`*/;
+SET @saved_cs_client     = @@character_set_client;
+/*!50503 SET character_set_client = utf8mb4 */;
+/*!50001 CREATE VIEW `v_department_workload` AS SELECT 
+ 1 AS `department_id`,
+ 1 AS `department_name`,
+ 1 AS `total_complaints`,
+ 1 AS `open_complaints`,
+ 1 AS `resolved_complaints`,
+ 1 AS `avg_resolution_hours`*/;
+SET character_set_client = @saved_cs_client;
+
+--
+-- Final view structure for view `v_department_workload`
+--
+
+/*!50001 DROP VIEW IF EXISTS `v_department_workload`*/;
+/*!50001 SET @saved_cs_client          = @@character_set_client */;
+/*!50001 SET @saved_cs_results         = @@character_set_results */;
+/*!50001 SET @saved_col_connection     = @@collation_connection */;
+/*!50001 SET character_set_client      = latin1 */;
+/*!50001 SET character_set_results     = latin1 */;
+/*!50001 SET collation_connection      = latin1_swedish_ci */;
+/*!50001 CREATE ALGORITHM=UNDEFINED */
+/*!50013 DEFINER=`campusfix`@`%` SQL SECURITY DEFINER */
+/*!50001 VIEW `v_department_workload` AS select `d`.`id` AS `department_id`,`d`.`name` AS `department_name`,count(`c`.`id`) AS `total_complaints`,coalesce(sum((case when (`c`.`status` in ('open','assigned','in_progress')) then 1 else 0 end)),0) AS `open_complaints`,coalesce(sum((case when (`c`.`status` in ('resolved','closed')) then 1 else 0 end)),0) AS `resolved_complaints`,round(avg((case when ((`c`.`status` in ('resolved','closed')) and (`c`.`resolved_at` is not null)) then timestampdiff(HOUR,`c`.`created_at`,`c`.`resolved_at`) else NULL end)),1) AS `avg_resolution_hours` from (`departments` `d` left join `complaints` `c` on((`c`.`department_id` = `d`.`id`))) group by `d`.`id`,`d`.`name` */;
+/*!50001 SET character_set_client      = @saved_cs_client */;
+/*!50001 SET character_set_results     = @saved_cs_results */;
+/*!50001 SET collation_connection      = @saved_col_connection */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
@@ -381,4 +442,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-10-17 14:17:26
+-- Dump completed on 2026-10-22 11:37:01
