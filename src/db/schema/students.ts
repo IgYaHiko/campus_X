@@ -14,7 +14,7 @@ export const students = mysqlTable("students", {
   passwordHash: varchar("password_hash", { length: 255 }),
   googleId: varchar("google_id", { length: 255 }).unique(),
   phone: varchar("phone", { length: 20 }),           // ← nullable now
-  departmentId: int("department_id"),                // FK added in migration 0001
+  branch: varchar("branch", { length: 100 }),                 // FK added in migration 0001
   year: int("year"),
   isActive: boolean("is_active").default(true).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),

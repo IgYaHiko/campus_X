@@ -1,14 +1,14 @@
 import z from "zod";
 
 export const registerSchema = z.object({
-    name: z.string().trim().min(2).max(100),
-    email: z.string().email(),
-    password: z.string().min(6).max(100),
-    rollNumber: z.string().trim().min(3).max(30),
-    departmentName: z.string().trim().min(2).max(100).optional(), 
-    year: z.coerce.number().int().min(1).max(5).optional(),
-    role: z.enum(["student", "staff"]).default("student"),
-})
+  name: z.string().trim().min(2).max(100),
+  email: z.string().email(),
+  password: z.string().min(6).max(100),
+  rollNumber: z.string().trim().min(3).max(30).optional(),
+  branch: z.string().trim().min(2).max(100).optional(), // <-- Changed
+  year: z.coerce.number().int().min(1).max(5).optional(),
+  role: z.enum(["student", "staff"]).default("student"),
+});
 
 export const loginSchema = z.object({
     email: z.string().email(),
