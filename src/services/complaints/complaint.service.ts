@@ -350,19 +350,24 @@ return {
 
 
 
-export async function createComplaints(input: CreateComplaintInput) {
+// Add studentId as the second parameter
+export async function createComplaints(
+  input: CreateComplaintInput, 
+  studentId: number // <-- NEW
+) {
  // ----- 1. FK pre-checks (fail fast with clear errors) -----
   const [student] = await db
     .select({ id: studentsTable.id })
     .from(studentsTable)
-    .where(eq(studentsTable.id, input.studentId))
+    .where(eq(studentsTable.id, studentId)) // <-- Use the new argument
     .limit(1);
 
-    if (!student) {
+  if (!student) {
     throw ApiError.badRequest(
-      `Student with id ${input.studentId} does not exist`
+      `Student with id ${studentId} does not exist` // <-- Use the new argument
     );
   }
+  
   const [category] = await db
     .select({ 
         id: categories.id,
@@ -374,21 +379,23 @@ export async function createComplaints(input: CreateComplaintInput) {
     .where(eq(categories.slug, input.categorySlug))
     .limit(1);
 
-    if (!category.isActive) {
+  if (!category) {
+    throw ApiError.badRequest(`Category '${input.categorySlug}' does not exist`);
+  }
+
+  if (!category.isActive) {
     throw ApiError.badRequest(
       `Category "${input.categorySlug}" is no longer accepting complaints`
     );
   }
 
-  
-  
   // ----- 2. Transactional insert -----
   const complaintId = await db.transaction(async (tx) => {
     // 2a. Insert the complaint
     const [result] = await tx.insert(complaints).values({
       title: input.title,
       description: input.description,
-      studentId: input.studentId,
+      studentId: studentId, // <-- Use the new argument
       categoryId: category.id,
       departmentId: category.defaultDepartmentId, 
       location: input.location,
@@ -412,17 +419,13 @@ export async function createComplaints(input: CreateComplaintInput) {
     return newId;
   });
 
-
   // ----- 4. Cache invalidation -----
   await cache.invalidatePattern("complaints:list:*");
   logger.debug({ complaintId }, "Complaint created, cache invalidated");
 
   // ----- 5. Return full created resource -----
   return getComplaintById(complaintId);
-  
-
 }
-
 
 
 
