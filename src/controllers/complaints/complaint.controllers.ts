@@ -42,19 +42,27 @@ export async function getComplaint(req: Request, res: Response, next: NextFuncti
 }
 
 
-export async function createComplaint(req: Request, res: Response, next: NextFunction) {
-        try {
-          const body = createComplaintSchema.parse(req.body);
-          const complaint = await complaintService.createComplaints(body);
+export async function createComplaint(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const body = createComplaintSchema.parse(req.body);
+    
+    // req.user is guaranteed to exist because of the requireAuth middleware
+    const studentId = req.user!.sub;
 
-          res
-          .status(201)
-          .location(`/api/v1/complaints${complaint!.id}`)
-          .json({ success: true, data: complaint });
-          
-        } catch (error) {
-          next(error)
-        }
+    // Pass the studentId as the second argument
+    const complaint = await complaintService.createComplaints(body, studentId);
+
+    res
+      .status(201)
+      .location(`/api/v1/complaints/${complaint!.id}`)
+      .json({ success: true, data: complaint });
+  } catch (err) {
+    next(err);
+  }
 }
 
 
@@ -77,9 +85,19 @@ export async function updateComplaintStatus(req: Request, res: Response, next: N
 
 export async function createComment(req: Request, res: Response, next: NextFunction) {
     try {
-      const {id} = complaintIdParamSchema.parse(req.params);
+      const { id } = complaintIdParamSchema.parse(req.params);
       const input = createCommentSchema.parse(req.body);
 
+         // Enforce identity based on token
+     if (req.user!.role === "student") {
+        input.commenterType = "student";
+        input.studentId = req.user!.sub;
+        input.staffId = undefined;
+    } else if (req.user!.role === "staff" || req.user!.role === "admin") {
+        input.commenterType = "staff";
+        input.staffId = req.user!.sub;
+        input.studentId = undefined;
+        }
 
       const comment = await complaintService.createComment(id, input);
 
@@ -133,8 +151,10 @@ export async function assignComplaint(
     const { id } = complaintIdParamSchema.parse(req.params);
     const input = assignComplaintSchema.parse(req.body);
 
-    const complaint = await complaintService.assignComplaint(id, input);
+    // override the admin email with the one from the token
+    input.adminEmail = req.user!.email;
 
+    const complaint = await complaintService.assignComplaint(id, input);
     res.status(200).json({ success: true, data: complaint });
   } catch (err) {
     next(err);

@@ -1,5 +1,6 @@
 import { Router } from "express";
 import * as complaintController from "../../controllers/complaints/complaint.controllers";
+import { requireAuth, requireRole } from "../../middlewares/requireAuth";
 
 const router = Router();
 
@@ -79,7 +80,10 @@ router.get("/", complaintController.listComplaints);
  *       201:
  *         description: Complaint created
  */
-router.post("/", complaintController.createComplaint);
+
+// 🛡️ PROTECTED ROUTES:
+// 1. Only students can create a complaint
+router.post("/", requireAuth,complaintController.createComplaint);
 
 /**
  * @openapi
@@ -130,7 +134,13 @@ router.get("/:id", complaintController.getComplaint);
  *       200:
  *         description: Status updated
  */
-router.patch("/:id/status", complaintController.updateComplaintStatus);
+// 2. Only staff and admins can update status
+router.patch(
+    "/:id/status",
+    requireAuth,
+    requireRole("staff", "admin"), 
+    complaintController.updateComplaintStatus
+);
 
 /**
  * @openapi
@@ -159,7 +169,12 @@ router.patch("/:id/status", complaintController.updateComplaintStatus);
  *       201:
  *         description: Comment created
  */
-router.post("/:id/comments", complaintController.createComment);
+// 3. Anyone logged in can comment
+router.post(
+    "/:id/comments", 
+    requireAuth,
+    complaintController.createComment
+);
 
 /**
  * @openapi
@@ -185,7 +200,11 @@ router.post("/:id/comments", complaintController.createComment);
  *       201:
  *         description: Tag attached
  */
-router.post("/:id/tags", complaintController.attachTags);
+// 4. Only staff and admins can attach/detach tags
+router.post("/:id/tags",
+    requireAuth,
+    requireRole("staff","admin"),
+     complaintController.attachTags);
 
 /**
  * @openapi
@@ -206,7 +225,11 @@ router.post("/:id/tags", complaintController.attachTags);
  *       200:
  *         description: Tag detached
  */
-router.delete("/:id/tags/:tagSlug", complaintController.detachTags);
+router.delete(
+    "/:id/tags/:tagSlug",
+    requireAuth, 
+    requireRole("staff","admin"),
+    complaintController.detachTags);
 
 /**
  * @openapi
@@ -233,6 +256,10 @@ router.delete("/:id/tags/:tagSlug", complaintController.detachTags);
  *       200:
  *         description: Assigned successfully
  */
-router.post("/:id/assign", complaintController.assignComplaint);
+router.post(
+    "/:id/assign",
+    requireAuth,
+    requireRole("admin"),
+    complaintController.assignComplaint);
 
 export default router;
