@@ -1,4 +1,3 @@
-
 import { and, desc, eq, like, or, SQL, count, sql } from "drizzle-orm";
 import { AssignComplaintInput, AttachTagInput, CreateCommentSchemaInput, CreateComplaintInput, ListComplaintsQuery, UpdateComplaintStatusInput } from "../../validators/complaints/complaint.validator";
 import { complaints } from "../../db/schema/complaints";
@@ -768,4 +767,21 @@ export async function assignComplaint(
 
   // 4. Return updated complaint
   return getComplaintById(complaintId);
+}
+
+
+// ---------------------------------------------------------
+// NEW: Get complaints for the logged-in student
+// ---------------------------------------------------------
+export async function listMyComplaints(
+  studentId: number,
+  query: ListComplaintsQuery
+) {
+  // Force the studentId filter to match the logged-in user
+  const restrictedQuery = {
+    ...query,
+    studentId: studentId, 
+  };
+
+  return listComplaints(restrictedQuery);
 }

@@ -160,3 +160,20 @@ export async function assignComplaint(
     next(err);
   }
 }
+
+
+
+export async function listMyComplaints(req: Request, res: Response, next: NextFunction) {
+  try {
+    const studentId = req.user!.sub;
+    const query = listComplaintsQuerySchema.parse(req.query);
+    const result = await complaintService.listMyComplaints(studentId, query);
+    res.status(200).json({
+      success: true,
+      ...result,
+    });
+
+  } catch (error) {
+    next(error)
+  }
+}
