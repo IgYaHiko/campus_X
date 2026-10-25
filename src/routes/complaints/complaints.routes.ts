@@ -85,6 +85,14 @@ router.get("/", complaintController.listComplaints);
 // 1. Only students can create a complaint
 router.post("/", requireAuth,complaintController.createComplaint);
 
+
+router.get(
+    "/me",
+    requireAuth,
+    requireRole("student"),
+    complaintController.listMyComplaints
+)
+
 /**
  * @openapi
  * /api/v1/complaints/{id}:
@@ -262,4 +270,7 @@ router.post(
     requireRole("admin"),
     complaintController.assignComplaint);
 
+
+
 export default router;
+

@@ -7,4 +7,5 @@ const router = Router();
 router.post("/register", RegisterAuthController.register);
 router.post("/login", LoginAuthController.login);
 router.post("/google", GoogleAuthController.googleLogin);
+
 export default router;
