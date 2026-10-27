@@ -30,6 +30,9 @@ jobs:
 
       - name: Run tests
         run: npm test
+        env:
+          NODE_ENV: test
+          JWT_SECRET: vsP0xufh0wz8HJTwHXKS6LNSvse26qexc/UX9ETv/og=
 
       - name: Compile TypeScript
         run: npm run build
