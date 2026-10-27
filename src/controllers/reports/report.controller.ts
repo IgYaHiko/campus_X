@@ -4,7 +4,7 @@ import * as analyticsService from "../../services/reports/analytics.service";
 
 
 
-export async function getDepartmentWorkload(req: Request, res: Response, next: NextFunction) {
+export async function getDepartmentWorkload(_req: Request, res: Response, next: NextFunction) {
     try {
        const data = await reportService.getDepartmentWorkload();
        res.status(200).json({success: true, data});
@@ -14,7 +14,7 @@ export async function getDepartmentWorkload(req: Request, res: Response, next: N
 }
 
 
-export async function getSystemStats(req: Request, res: Response, next: NextFunction) {
+export async function getSystemStats(_req: Request, res: Response, next: NextFunction) {
     try {
       const data = await reportService.getSystemStats();
       res.status(200).json({
@@ -27,7 +27,7 @@ export async function getSystemStats(req: Request, res: Response, next: NextFunc
 }
 
 
-export async function getUnassignedStaff(req: Request, res: Response, next: NextFunction) {
+export async function getUnassignedStaff(_req: Request, res: Response, next: NextFunction) {
     try {
       const data = await analyticsService.getUnassignedStaff();
       res.status(200).json({
