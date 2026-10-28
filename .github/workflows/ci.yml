@@ -1,5 +1,5 @@
 
-name: CampusFix Backend CI
+name: CampusFix Backend CI/CD
 
 on:
   push:
@@ -32,10 +32,75 @@ jobs:
         run: npm test
         env:
           NODE_ENV: test
-          JWT_SECRET: vsP0xufh0wz8HJTwHXKS6LNSvse26qexc/UX9ETv/og=
+          JWT_SECRET: ${{ secrets.CI_JWT_SECRET }}
 
       - name: Compile TypeScript
         run: npm run build
 
       - name: Build production Docker image
-        run: docker build --target production -t campus-x-server:ci .
+        run: |
+          docker build --target production \
+            -t campus-x-server:ci .
+
+      - name: Prepare image for deployment
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          docker tag campus-x-server:ci campus-x-server:latest
+          docker save campus-x-server:latest | gzip > campus-x-server.tar.gz
+
+      - name: Configure SSH
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+          EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$EC2_SSH_KEY" > ~/.ssh/campus-x-key
+          chmod 600 ~/.ssh/campus-x-key
+          ssh-keyscan -H "$EC2_HOST" >> ~/.ssh/known_hosts
+
+      - name: Transfer image to EC2
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+          EC2_USER: ${{ secrets.EC2_USER }}
+        run: |
+          scp -i ~/.ssh/campus-x-key \
+            campus-x-server.tar.gz \
+            "$EC2_USER@$EC2_HOST:/tmp/campus-x-server.tar.gz"
+
+      - name: Deploy API on EC2
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+          EC2_USER: ${{ secrets.EC2_USER }}
+        run: |
+          ssh -i ~/.ssh/campus-x-key "$EC2_USER@$EC2_HOST" 'bash -se' <<'REMOTE'
+          set -euo pipefail
+
+          gunzip -c /tmp/campus-x-server.tar.gz | docker load
+          rm -f /tmp/campus-x-server.tar.gz
+
+          docker compose \
+            --env-file "$HOME/.env.production" \
+            -f "$HOME/compose.prod.yaml" \
+            up -d --no-deps --force-recreate api
+
+          for i in $(seq 1 12); do
+            if curl -fsS http://127.0.0.1:8000/health; then
+              echo
+              echo "Deployment successful."
+              exit 0
+            fi
+            sleep 5
+          done
+
+          echo "Health check failed after deployment."
+          docker logs --tail 100 campusfix-api
+          exit 1
+          REMOTE
+
+      - name: Remove temporary SSH key
+        if: always() && github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: rm -f ~/.ssh/campus-x-key
