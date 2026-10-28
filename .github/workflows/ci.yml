@@ -54,11 +54,39 @@ jobs:
           EC2_HOST: ${{ secrets.EC2_HOST }}
           EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
         run: |
+          set -euo pipefail
+
+          test -n "$EC2_HOST" || {
+            echo "EC2_HOST secret is empty."
+            exit 1
+          }
+
+          test -n "$EC2_SSH_KEY" || {
+            echo "EC2_SSH_KEY secret is empty."
+            exit 1
+          }
+
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
-          printf '%s\n' "$EC2_SSH_KEY" > ~/.ssh/campus-x-key
+
+          printf '%s\n' "$EC2_SSH_KEY" | tr -d '\r' > ~/.ssh/campus-x-key
           chmod 600 ~/.ssh/campus-x-key
-          ssh-keyscan -H "$EC2_HOST" >> ~/.ssh/known_hosts
+
+          echo "Validating SSH private key..."
+          ssh-keygen -y -f ~/.ssh/campus-x-key > /dev/null
+
+          echo "Scanning EC2 SSH host key..."
+          if ! ssh-keyscan -T 10 -p 22 -H "$EC2_HOST" \
+            > ~/.ssh/known_hosts 2> /tmp/ssh-keyscan-error.log; then
+            cat /tmp/ssh-keyscan-error.log
+            echo "SSH host scan failed. Check EC2_HOST and inbound TCP port 22."
+            exit 1
+          fi
+
+          test -s ~/.ssh/known_hosts || {
+            echo "No SSH host key was received."
+            exit 1
+          }
 
       - name: Transfer image to EC2
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -66,7 +94,13 @@ jobs:
           EC2_HOST: ${{ secrets.EC2_HOST }}
           EC2_USER: ${{ secrets.EC2_USER }}
         run: |
-          scp -i ~/.ssh/campus-x-key \
+          set -euo pipefail
+
+          scp \
+            -i ~/.ssh/campus-x-key \
+            -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes \
+            -o ConnectTimeout=15 \
             campus-x-server.tar.gz \
             "$EC2_USER@$EC2_HOST:/tmp/campus-x-server.tar.gz"
 
@@ -76,8 +110,17 @@ jobs:
           EC2_HOST: ${{ secrets.EC2_HOST }}
           EC2_USER: ${{ secrets.EC2_USER }}
         run: |
-          ssh -i ~/.ssh/campus-x-key "$EC2_USER@$EC2_HOST" 'bash -se' <<'REMOTE'
           set -euo pipefail
+
+          ssh \
+            -i ~/.ssh/campus-x-key \
+            -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes \
+            -o ConnectTimeout=15 \
+            "$EC2_USER@$EC2_HOST" 'bash -se' <<'REMOTE'
+          set -euo pipefail
+
+          cd "$HOME"
 
           gunzip -c /tmp/campus-x-server.tar.gz | docker load
           rm -f /tmp/campus-x-server.tar.gz
