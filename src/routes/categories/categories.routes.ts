@@ -1,5 +1,6 @@
 import { Router } from "express";
 import * as categoryController from "../../controllers/categories/category.controller";
+import { requireAuth, requireRole } from "../../middlewares/requireAuth";
 
 const router = Router();
 
@@ -29,5 +30,14 @@ const router = Router();
  *                       defaultDepartmentId: { type: integer, nullable: true }
  */
 router.get("/", categoryController.listCategories);
+
+
+
+router.post(
+    "/",
+    requireAuth,
+    requireRole("admin"),
+    categoryController.createCategory
+);
 
 export default router;
