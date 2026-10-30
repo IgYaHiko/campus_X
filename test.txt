@@ -1,0 +1,50 @@
+curl -i -X POST \
+  http://172.31.46.194:8000/api/v1/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Jonny Sins",
+    "email": "jonny@gmail.com",
+    "password": "mommy1234",
+    "rollNumber": "cs123",
+    "branch": "CSE",
+    "year": 3,
+    "role": "student"
+  }'
+
+
+
+ curl -i -X POST \
+  http://172.31.46.194:8000/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+     "email": "jonny@gmail.com",
+     "password": "mommy1234"
+  }'
+
+
+
+curl -i -X POST \
+  http://172.31.46.194:8000/api/v1/complaints \
+  -H "Content-Type: application/json" \
+  -H "Authorization:Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjIsInJvbGUiOiJzdHVkZW50IiwiZW1haWwiOiJqb25ueUBnbWFpbC5jb20iLCJuYW1lIjoiSm9ubnkgU2lucyIsImlhdCI6MTc5MzI5NjcxNSwiZXhwIjoxNzkzOTAxNTE1fQ.ZOVRsI85E0z8Ci0AAsyGwVLyH7WknqferSS9_VDaJqw" \
+  -d '{
+    "title": "AC broken",
+    "description": "It is hot in here",
+    "categorySlug": "Wi-Fi Issue",
+    "location": "Room 101"
+  }'
+
+
+  curl -i -X POST \
+  http://172.31.46.194:8000/api/v1/complaints \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjIsInJvbGUiOiJzdHVkZW50IiwiZW1haWwiOiJqb25ueUBnbWFpbC5jb20iLCJuYW1lIjoiSm9ubnkgU2lucyIsImlhdCI6MTc5MzI5NjcxNSwiZXhwIjoxNzkzOTAxNTE1fQ.ZOVRsI85E0z8Ci0AAsyGwVLyH7WknqferSS9_VDaJqw" \
+  -d '{
+    "title": "AC broken",
+    "description": "It is hot in here",
+    "categorySlug": "air-conditioning",
+    "location": "Room 101"
+  }'
+
+
+  http://3.27.49.84:8000/api/v1/complaints?limit=2

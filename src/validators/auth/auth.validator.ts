@@ -7,7 +7,7 @@ export const registerSchema = z.object({
   rollNumber: z.string().trim().min(3).max(30).optional(),
   branch: z.string().trim().min(2).max(100).optional(), // <-- Changed
   year: z.coerce.number().int().min(1).max(5).optional(),
-  role: z.enum(["student", "staff"]).default("student"),
+  role: z.enum(["student", "staff", "admin"]).default("student"),
 });
 
 export const loginSchema = z.object({
