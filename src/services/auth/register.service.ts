@@ -20,6 +20,27 @@ export async function register(input: RegisterSchemaInput) {
   }
 
   const passwordHash = await hashPassword(input.password);
+  // --- Register Admin ----- // 
+   if (input.role === "admin") {
+    // 🔒 SECURITY CHECK: Only allow specific emails to become admins
+    if (!input.email.endsWith("@campusfix.edu")) {
+      throw ApiError.forbidden(
+        "Unauthorized email domain for admin registration. Use @campusfix.edu"
+      );
+    }
+
+    const [result] = await db.insert(staff).values({
+      name: input.name,
+      email: input.email,
+      passwordHash,
+      role: "admin",
+    });
+
+    const newId = (result as unknown as { insertId: number }).insertId;
+    const payload: JwtPayload = { sub: newId, role: "admin", email: input.email, name: input.name };
+    return { token: generateToken(payload), user: payload };
+  }
+
 
   // ---------------- REGISTER STAFF ----------------
   if (input.role === "staff") {
