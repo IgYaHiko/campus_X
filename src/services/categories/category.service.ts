@@ -3,6 +3,8 @@ import { db } from "../../db/client";
 import { categories } from "../../db/schema/categories";
 import { departments } from "../../db/schema/department";
 import { CategoryListItem } from "../../dto/categories/categories.dto";
+import { CreateCategoryInput } from "../../validators/categories/category.validator";
+import { ApiError } from "../../utils/ApiError";
 
 export async function listCategories(): Promise<CategoryListItem[]> {
 
@@ -53,4 +55,29 @@ export async function findCategoryBySlug(slug: string) {
     .limit(1);
 
   return row ?? null;
+}
+
+
+
+export async function createCategory(input: CreateCategoryInput) {
+   // check if the slug already exists
+   const [existing] = await db
+   .select({id: categories.id})
+   .from(categories)
+   .where(eq(categories.slug, input.slug))
+   .limit(1);
+
+   if(existing) {
+    throw ApiError.badRequest(`Category with slug '${input.slug}' already exists`);
+   }
+
+  // Insert
+  const [result] = await db.insert(categories).values({
+    name: input.name,
+    slug: input.slug,
+    description: input.description ?? null,
+    defaultDepartmentId: input.defaultDepartmentId ?? null,
+  });
+
+   return (result as any).insertId;
 }

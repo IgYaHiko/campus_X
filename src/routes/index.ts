@@ -4,7 +4,8 @@ import categoriesRoutes from "./categories/categories.routes";
 import tagsRoutes from "./tags/tags.routes"
 import reportRoutes from "./reports/reports.routes";
 import authRoutes from "./auth/auth.routes";
-import profileRoutes from "./student/student.routes"
+import profileRoutes from "./student/student.routes";
+import departmentRoutes from "./department/departments.routes";
 const router = Router();
 
 router.use("/complaints", complaintRoutes);
@@ -12,6 +13,7 @@ router.use("/categories", categoriesRoutes);
 router.use("/tags", tagsRoutes);
 router.use("/reports", reportRoutes);
 router.use("/auth", authRoutes);
-router.use("/student",profileRoutes)
+router.use("/student",profileRoutes);
+router.use("/departments", departmentRoutes);
 
 export default router;
