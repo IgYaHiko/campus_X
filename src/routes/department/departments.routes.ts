@@ -1,7 +1,8 @@
 import { Router } from "express";
 import { db } from "../../db/client";
 import { departments } from "../../db/schema/department";
-
+import { requireAuth, requireRole } from "../../middlewares/requireAuth";
+import * as departmentController from "../../controllers/department/department.controller"
 const router = Router();
 
 router.get("/", async (_req, res, next) => {
@@ -12,5 +13,15 @@ router.get("/", async (_req, res, next) => {
     next(err);
   }
 });
+
+
+// Only admins can create new departments
+router.post(
+  "/",
+  requireAuth,
+  requireRole("admin"),
+  departmentController.createDepartment
+);
+
 
 export default router;
