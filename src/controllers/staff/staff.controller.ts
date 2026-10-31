@@ -11,3 +11,5 @@ export async function getAllStaff(_req: Request, res: Response, next: NextFuncti
       next(error);
     }
 }
+
+
