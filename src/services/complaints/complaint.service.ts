@@ -785,3 +785,50 @@ export async function listMyComplaints(
 
   return listComplaints(restrictedQuery);
 }
+
+
+// delete complaints 
+export async function deleteComplaint(
+  complaintId: number,
+  userId: number,
+  userRole: "student" | "staff" | "admin"
+) {
+  // 1. Find the complaint
+  const [complaint] = await db
+    .select({
+      id: complaints.id,
+      studentId: complaints.studentId,
+      status: complaints.status,
+    })
+    .from(complaints)
+    .where(eq(complaints.id, complaintId))
+    .limit(1);
+
+  if (!complaint) {
+    throw ApiError.notFound(`Complaint with id ${complaintId} not found`);
+  }
+
+  // 2. Authorization Logic
+  if (userRole === "student") {
+    // Students can only delete their own complaints
+    if (complaint.studentId !== userId) {
+      throw ApiError.forbidden("You can only delete your own complaints");
+    }
+    // Students cannot delete complaints that are already being handled
+    if (complaint.status !== "open" && complaint.status !== "rejected") {
+      throw ApiError.badRequest("You can only delete complaints that are still 'open' or 'rejected'");
+    }
+  } else if (userRole !== "admin") {
+    // Staff cannot delete complaints
+    throw ApiError.forbidden("Staff members cannot delete complaints");
+  }
+
+  // 3. Delete the complaint (CASCADE will handle comments, history, tags)
+  await db.delete(complaints).where(eq(complaints.id, complaintId));
+
+  // 4. Invalidate Cache
+  await cache.invalidatePattern("complaints:list:*");
+  logger.debug({ complaintId, deletedBy: userId, role: userRole }, "Complaint deleted");
+
+  return { deleted: true };
+}

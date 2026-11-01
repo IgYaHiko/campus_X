@@ -271,6 +271,14 @@ router.post(
     complaintController.assignComplaint);
 
 
+// Allow both students and admins to hit this. The service handles the fine-grained logic.
+router.delete(
+  "/:id",
+  requireAuth,
+  requireRole("student", "admin"),
+  complaintController.deleteComplaint
+);
+
 
 export default router;
 

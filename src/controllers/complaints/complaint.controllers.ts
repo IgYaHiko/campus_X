@@ -177,3 +177,18 @@ export async function listMyComplaints(req: Request, res: Response, next: NextFu
     next(error)
   }
 }
+
+
+export async function deleteComplaint(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { id } = complaintIdParamSchema.parse(req.params);
+    const userId = req.user!.sub;
+    const userRole = req.user!.role;
+
+    const result = await complaintService.deleteComplaint(id, userId, userRole);
+
+    res.status(200).json({ success: true, ...result });
+  } catch (err) {
+    next(err);
+  }
+}
