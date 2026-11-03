@@ -14,7 +14,7 @@ router.use("/categories", categoriesRoutes);
 router.use("/tags", tagsRoutes);
 router.use("/reports", reportRoutes);
 router.use("/auth", authRoutes);
-router.use("/student3",profileRoutes);
+router.use("/student",profileRoutes);
 router.use("/departments", departmentRoutes);
 router.use("/staff",staffRoutes);
 
