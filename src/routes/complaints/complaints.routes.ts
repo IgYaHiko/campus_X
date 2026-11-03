@@ -279,6 +279,12 @@ router.delete(
   complaintController.deleteComplaint
 );
 
+router.patch(
+    "/:id",
+    requireAuth,
+    requireRole("student"),
+    complaintController.updateComplaint
+);
 
 export default router;
 

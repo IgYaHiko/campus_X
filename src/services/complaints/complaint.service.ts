@@ -1,5 +1,5 @@
 import { and, desc, eq, like, or, SQL, count, sql } from "drizzle-orm";
-import { AssignComplaintInput, AttachTagInput, CreateCommentSchemaInput, CreateComplaintInput, ListComplaintsQuery, UpdateComplaintStatusInput } from "../../validators/complaints/complaint.validator";
+import { AssignComplaintInput, AttachTagInput, CreateCommentSchemaInput, CreateComplaintInput, ListComplaintsQuery, UpdateComplaintInput, UpdateComplaintStatusInput } from "../../validators/complaints/complaint.validator";
 import { complaints } from "../../db/schema/complaints";
 import { db } from "../../db/client";
 import { students, students as studentsTable} from "../../db/schema/students";
@@ -831,4 +831,84 @@ export async function deleteComplaint(
   logger.debug({ complaintId, deletedBy: userId, role: userRole }, "Complaint deleted");
 
   return { deleted: true };
+}
+
+
+
+
+
+export async function updateComplaint(
+  complaintId: number,
+  studentId: number,
+  input: UpdateComplaintInput
+) {
+  // 1. Find the complaint
+  const [complaint] = await db
+    .select({
+      id: complaints.id,
+      studentId: complaints.studentId,
+      status: complaints.status,
+    })
+    .from(complaints)
+    .where(eq(complaints.id, complaintId))
+    .limit(1);
+
+  if (!complaint) {
+    throw ApiError.notFound(`Complaint with id ${complaintId} not found`);
+  }
+
+  // 2. Verify Ownership
+  if (complaint.studentId !== studentId) {
+    throw ApiError.forbidden("You can only edit your own complaints");
+  }
+
+  // 3. Verify Status (Can only edit if open or rejected)
+  if (complaint.status !== "open" && complaint.status !== "rejected") {
+    throw ApiError.badRequest(
+      `Cannot edit complaint with status "${complaint.status}". Only 'open' or 'rejected' complaints can be edited.`
+    );
+  }
+
+  // 4. If category is changing, verify it exists
+  let categoryId: number | undefined;
+  let departmentId: number | null | undefined;
+
+  if (input.categorySlug) {
+    const [category] = await db
+      .select({ 
+        id: categories.id, 
+        defaultDepartmentId: categories.defaultDepartmentId 
+      })
+      .from(categories)
+      .where(eq(categories.slug, input.categorySlug))
+      .limit(1);
+
+    if (!category) {
+      throw ApiError.badRequest(`Category '${input.categorySlug}' does not exist`);
+    }
+    
+    categoryId = category.id;
+    departmentId = category.defaultDepartmentId; // Re-route department if category changes
+  }
+
+  // 5. Update the complaint
+  await db
+    .update(complaints)
+    .set({
+      ...(input.title && { title: input.title }),
+      ...(input.description && { description: input.description }),
+      ...(input.location && { location: input.location }),
+      ...(input.building !== undefined && { building: input.building }),
+      ...(input.priority && { priority: input.priority }),
+      ...(categoryId && { categoryId }),
+      ...(departmentId !== undefined && { departmentId }),
+    })
+    .where(eq(complaints.id, complaintId));
+
+  // 6. Invalidate Cache
+  await cache.invalidatePattern("complaints:list:*");
+  logger.debug({ complaintId }, "Complaint updated by student");
+
+  // 7. Return the updated resource
+  return getComplaintById(complaintId);
 }
