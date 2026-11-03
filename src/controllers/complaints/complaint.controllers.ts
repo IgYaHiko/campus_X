@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { assignComplaintSchema, attachTagSchema, complaintIdParamSchema, createCommentSchema, createComplaintSchema, listComplaintsQuerySchema, tagSlugParamSchema, updateComplaintStatusSchema } from "../../validators/complaints/complaint.validator";
+import { assignComplaintSchema, attachTagSchema, complaintIdParamSchema, createCommentSchema, createComplaintSchema, listComplaintsQuerySchema, tagSlugParamSchema, updateComplaintSchema, updateComplaintStatusSchema } from "../../validators/complaints/complaint.validator";
 import * as complaintService from "../../services/complaints/complaint.service";
 import { ApiError } from "../../utils/ApiError";
 
@@ -191,4 +191,19 @@ export async function deleteComplaint(req: Request, res: Response, next: NextFun
   } catch (err) {
     next(err);
   }
+}
+
+
+export async function updateComplaint(req: Request, res: Response, next: NextFunction) {
+    try {
+      const {id} = complaintIdParamSchema.parse(req.params);
+      const studentId = req.user!.sub;
+
+      const input = updateComplaintSchema.parse(req.body);
+
+      const complaint = await complaintService.updateComplaint(id, studentId, input);
+      res.status(200).json({ success: true, data: complaint });
+    } catch (error) {
+      next(error);
+    }
 }

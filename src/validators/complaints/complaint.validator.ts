@@ -89,6 +89,18 @@ export const assignComplaintSchema = z.object({
 
 
 
+export const updateComplaintSchema = z.object({
+  title: z.string().trim().min(5).max(200).optional(),
+  description: z.string().trim().min(10).max(2000).optional(),
+  location: z.string().trim().min(2).max(200).optional(),
+  building: z.string().trim().min(2).max(100).optional(),
+  priority: z.enum(["low", "medium", "high", "urgent"]).optional(),
+  categorySlug: z.string().trim().min(2).max(80).optional(),
+});
+
+
+
+
 export type ListComplaintsQuery = z.infer<typeof listComplaintsQuerySchema>;
 export type ComplaintIdParam = z.infer<typeof complaintIdParamSchema>;
 
@@ -106,3 +118,6 @@ export type TagSlugParam = z.infer<typeof tagSlugParamSchema>;
 
 
 export type AssignComplaintInput = z.infer<typeof assignComplaintSchema>;
+
+
+export type UpdateComplaintInput = z.infer<typeof updateComplaintSchema>;
