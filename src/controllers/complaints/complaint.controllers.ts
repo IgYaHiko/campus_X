@@ -194,16 +194,37 @@ export async function deleteComplaint(req: Request, res: Response, next: NextFun
 }
 
 
-export async function updateComplaint(req: Request, res: Response, next: NextFunction) {
-    try {
-      const {id} = complaintIdParamSchema.parse(req.params);
-      const studentId = req.user!.sub;
+export async function updateComplaint(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const { id } = complaintIdParamSchema.parse(req.params);
 
-      const input = updateComplaintSchema.parse(req.body);
+    const userId = Number(req.user!.sub);
+    const userRole = req.user!.role;
 
-      const complaint = await complaintService.updateComplaint(id, studentId, input);
-      res.status(200).json({ success: true, data: complaint });
-    } catch (error) {
-      next(error);
+    if (userRole !== "student" && userRole !== "admin") {
+      throw ApiError.forbidden(
+        "You are not allowed to update complaints"
+      );
     }
+
+    const input = updateComplaintSchema.parse(req.body);
+
+    const complaint = await complaintService.updateComplaint(
+      id,
+      userId,
+      userRole,
+      input
+    );
+
+    res.status(200).json({
+      success: true,
+      data: complaint,
+    });
+  } catch (error) {
+    next(error);
+  }
 }
