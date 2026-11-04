@@ -6,6 +6,11 @@ import { db } from "../../db/client";
 import { and, eq } from "drizzle-orm";
 const router = Router();
 
+// Admin profile routes (must be before /:id)
+router.get("/me", requireAuth, requireRole("admin"), StaffController.getMyProfile);
+router.patch("/me", requireAuth, requireRole("admin"), StaffController.updateMyProfile);
+
+
 
 router.get(
     "/", 
