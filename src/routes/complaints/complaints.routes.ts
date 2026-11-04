@@ -282,7 +282,7 @@ router.delete(
 router.patch(
     "/:id",
     requireAuth,
-    requireRole("student"),
+    requireRole("student","admin"),
     complaintController.updateComplaint
 );
 
