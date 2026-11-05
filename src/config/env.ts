@@ -27,6 +27,10 @@ const envSchema = z.object({
   JWT_SECRET: z.string().min(10),
   JWT_EXPIRES_IN: z.string().default("7d"),
   GOOGLE_CLIENT_ID: z.string().optional(),
+  LANDING_URL: z.string().url(),
+  LANDING_SESSION_SECRET: z.string().min(32),
+  LANDING_SESSION_TTL: z.coerce.number().int().positive().default(86400),
+  STUDENT_URL: z.string().url().optional(),
 
 
   
@@ -59,6 +63,8 @@ export const env = {
   JWT_SECRET: parsed.data.JWT_SECRET,
   JWT_EXPIRES_IN: parsed.data.JWT_EXPIRES_IN,
   GOOGLE_CLIENT_ID: parsed.data.GOOGLE_CLIENT_ID,
-
-  
+  LANDING_URL: parsed.data.LANDING_URL,
+  LANDING_SESSION_SECRET: parsed.data.LANDING_SESSION_SECRET,
+  LANDING_SESSION_TTL: parsed.data.LANDING_SESSION_TTL,
+  STUDENT_URL: parsed.data.STUDENT_URL,
 };
